@@ -168,6 +168,7 @@ h1{font-family:var(--font-display);font-weight:400;font-size:clamp(26px,5vw,36px
       </div>
       <div role="tabpanel" data-panel="fit" hidden>
         <label class="check"><input type="checkbox" id="autoTrack" checked> จับใบหน้าอัตโนมัติ (ผมขยับตามหัว)</label>
+        <label class="check"><input type="checkbox" id="bald" checked> ลบผมเดิมออกก่อนใส่ทรงใหม่</label>
         <label class="check"><input type="checkbox" id="guide"> แสดงกรอบใบหน้า (ไรผมถึงคาง)</label>
         <div class="field"><label for="size">ขนาดใบหน้า</label><output id="sizeOut">100%</output><input type="range" id="size" min="40" max="220" value="100"></div>
         <div class="field"><label for="width">ความกว้างใบหน้า</label><output id="widthOut">100%</output><input type="range" id="width" min="70" max="130" value="100"></div>
@@ -205,7 +206,8 @@ const st = {
 };
 let dirty = true, frameNo = 0, stream = null;
 let tracker = null, trackerLoad = null, trackerMode = 'VIDEO', lastVT = -1, tracked = false, lostFrames = 0;
-const shapeAcc = []; st.offX = 0; st.offY = 0; st.shapeManual = false; st.autoTrack = true;
+const shapeAcc = []; st.offX = 0; st.offY = 0; st.shapeManual = false; st.autoTrack = true; st.bald = true;
+let segmenter = null, segMode = 'VIDEO';
 
 /* ---------- color helpers ---------- */
 const hexRgb = h => { h = h.replace('#', ''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
@@ -239,26 +241,27 @@ const longPath = (wavy) => P(p => {
 });
 
 const HAIR = [
-  { id: 'buzz', name: 'บัซคัท', layers: [{ path: cap(-1.24, 1.04, -0.88), alpha: .62, tex: 'stipple' }] },
-  { id: 'crew', name: 'ครูว์คัท', layers: [fade(.5), { path: topCap(-1.36, 0.9), alpha: 1, flow: 'up' }] },
-  { id: 'sidepart', name: 'รองทรงแสกข้าง', layers: [{ path: cap(-1.46, 1.1, -0.86), alpha: 1, flow: 'side', part: true }] },
-  { id: 'pompadour', name: 'ปอมปาดัวร์', layers: [fade(.42), { path: P(p => { p.moveTo(-0.8, -0.62); p.bezierCurveTo(-0.98, -1.25, -0.62, -1.86, 0.05, -1.84); p.bezierCurveTo(0.7, -1.82, 1.0, -1.3, 0.8, -0.62); p.bezierCurveTo(0.45, -0.95, -0.45, -0.95, -0.8, -0.62); p.closePath(); }), alpha: 1, flow: 'back', shine: 1.4 }] },
-  { id: 'quiff', name: 'ควิฟฟ์', layers: [fade(.42), { path: P(p => { p.moveTo(-0.82, -0.6); p.bezierCurveTo(-0.98, -1.15, -0.55, -1.5, -0.05, -1.52); p.bezierCurveTo(0.3, -1.56, 0.45, -1.82, 0.55, -1.78); p.bezierCurveTo(0.95, -1.5, 1.02, -1.05, 0.82, -0.6); p.bezierCurveTo(0.45, -0.98, -0.45, -0.98, -0.82, -0.6); p.closePath(); }), alpha: 1, flow: 'up' }] },
-  { id: 'undercut', name: 'อันเดอร์คัทเสยหลัง', layers: [fade(.3), { path: topCap(-1.5, 0.84), alpha: 1, flow: 'back', shine: 1.3 }] },
-  { id: 'twoblock', name: 'ทูบล็อก', layers: [fade(.3), { path: P(p => { p.moveTo(-1.06, -0.45); p.bezierCurveTo(-1.14, -1.12, -0.68, -1.52, 0, -1.52); p.bezierCurveTo(0.68, -1.52, 1.14, -1.12, 1.06, -0.45);
+  { id: 'own', name: 'ผมเดิม เปลี่ยนสี', layers: null, sway: 0 },
+  { id: 'buzz', sway: 0, name: 'บัซคัท', layers: [{ path: cap(-1.24, 1.04, -0.88), alpha: .62, tex: 'stipple' }] },
+  { id: 'crew', sway: 0.05, name: 'ครูว์คัท', layers: [fade(.5), { path: topCap(-1.36, 0.9), alpha: 1, flow: 'up' }] },
+  { id: 'sidepart', sway: 0.15, name: 'รองทรงแสกข้าง', layers: [{ path: cap(-1.46, 1.1, -0.86), alpha: 1, flow: 'side', part: true }] },
+  { id: 'pompadour', sway: 0.1, name: 'ปอมปาดัวร์', layers: [fade(.42), { path: P(p => { p.moveTo(-0.8, -0.62); p.bezierCurveTo(-0.98, -1.25, -0.62, -1.86, 0.05, -1.84); p.bezierCurveTo(0.7, -1.82, 1.0, -1.3, 0.8, -0.62); p.bezierCurveTo(0.45, -0.95, -0.45, -0.95, -0.8, -0.62); p.closePath(); }), alpha: 1, flow: 'back', shine: 1.4 }] },
+  { id: 'quiff', sway: 0.12, name: 'ควิฟฟ์', layers: [fade(.42), { path: P(p => { p.moveTo(-0.82, -0.6); p.bezierCurveTo(-0.98, -1.15, -0.55, -1.5, -0.05, -1.52); p.bezierCurveTo(0.3, -1.56, 0.45, -1.82, 0.55, -1.78); p.bezierCurveTo(0.95, -1.5, 1.02, -1.05, 0.82, -0.6); p.bezierCurveTo(0.45, -0.98, -0.45, -0.98, -0.82, -0.6); p.closePath(); }), alpha: 1, flow: 'up' }] },
+  { id: 'undercut', sway: 0.08, name: 'อันเดอร์คัทเสยหลัง', layers: [fade(.3), { path: topCap(-1.5, 0.84), alpha: 1, flow: 'back', shine: 1.3 }] },
+  { id: 'twoblock', sway: 0.25, name: 'ทูบล็อก', layers: [fade(.3), { path: P(p => { p.moveTo(-1.06, -0.45); p.bezierCurveTo(-1.14, -1.12, -0.68, -1.52, 0, -1.52); p.bezierCurveTo(0.68, -1.52, 1.14, -1.12, 1.06, -0.45);
       let x = 1.06; for (let i = 0; i < 10; i++) { const nx = 1.06 - (i + 1) * 0.212, m = (x + nx) / 2; p.quadraticCurveTo(m, -0.52 - 0.17 * (1 - m * m), nx, -0.47 - 0.08 * (1 - nx * nx)); x = nx; } p.closePath(); }), alpha: 1, flow: 'down' }] },
-  { id: 'crop', name: 'เฟรนช์ครอป', layers: [fade(.45), { path: P(p => { p.moveTo(-0.97, -0.48); p.bezierCurveTo(-1.06, -1.1, -0.66, -1.36, 0, -1.36); p.bezierCurveTo(0.66, -1.36, 1.06, -1.1, 0.97, -0.48); p.lineTo(0.85, -0.62);
+  { id: 'crop', sway: 0.15, name: 'เฟรนช์ครอป', layers: [fade(.45), { path: P(p => { p.moveTo(-0.97, -0.48); p.bezierCurveTo(-1.06, -1.1, -0.66, -1.36, 0, -1.36); p.bezierCurveTo(0.66, -1.36, 1.06, -1.1, 0.97, -0.48); p.lineTo(0.85, -0.62);
       let x = 0.85; for (let i = 0; i < 12; i++) { const nx = 0.85 - (i + 1) * (1.7 / 12), m = (x + nx) / 2; p.quadraticCurveTo(m, -0.71, nx, -0.63); x = nx; } p.lineTo(-0.97, -0.48); p.closePath(); }), alpha: 1, flow: 'down' }] },
-  { id: 'curly', name: 'ผมหยิก', layers: [{ path: P(p => { capOuter(p, -1.5, 1.16); hairline(p, -0.8);
+  { id: 'curly', sway: 0.3, name: 'ผมหยิก', layers: [{ path: P(p => { capOuter(p, -1.5, 1.16); hairline(p, -0.8);
       for (let a = Math.PI * 0.92; a <= Math.PI * 2.08; a += 0.21) { const x = 1.2 * Math.cos(a), y = -0.5 + 1.02 * Math.sin(a); if (y < 0.05) { p.moveTo(x + 0.17, y); p.arc(x, y, 0.17, 0, Math.PI * 2); } } }), alpha: 1, tex: 'curl' }] },
-  { id: 'longmen', name: 'ผมยาวประบ่า', layers: [{ path: P(p => { p.moveTo(-1.22, 1.28); p.bezierCurveTo(-1.36, 0.3, -1.32, -1.46, 0, -1.44); p.bezierCurveTo(1.32, -1.46, 1.36, 0.3, 1.22, 1.28); p.bezierCurveTo(1.1, 1.34, 0.98, 1.32, 0.88, 1.26);
+  { id: 'longmen', sway: 1, name: 'ผมยาวประบ่า', layers: [{ path: P(p => { p.moveTo(-1.22, 1.28); p.bezierCurveTo(-1.36, 0.3, -1.32, -1.46, 0, -1.44); p.bezierCurveTo(1.32, -1.46, 1.36, 0.3, 1.22, 1.28); p.bezierCurveTo(1.1, 1.34, 0.98, 1.32, 0.88, 1.26);
       p.bezierCurveTo(0.9, 0.8, 1.04, 0.2, 0.95, -0.35); p.bezierCurveTo(0.88, -0.7, 0.4, -0.95, 0.02, -0.98); p.bezierCurveTo(-0.4, -0.95, -0.88, -0.7, -0.95, -0.35); p.bezierCurveTo(-1.04, 0.2, -0.9, 0.8, -0.88, 1.26); p.bezierCurveTo(-0.98, 1.32, -1.1, 1.34, -1.22, 1.28); p.closePath(); }), alpha: 1, flow: 'downpart' }] },
-  { id: 'manbun', name: 'แมนบัน', layers: [{ path: P(p => p.ellipse(0, -1.5, 0.33, 0.25, 0, 0, Math.PI * 2)), alpha: 1, tex: 'curl' }, { path: cap(-1.38, 1.07, -0.86), alpha: 1, flow: 'back', shine: 1.2 }] },
-  { id: 'pixie', name: 'พิกซี่', layers: [{ path: P(p => { capOuter(p, -1.38, 1.08); p.lineTo(0.92, 0.12); p.bezierCurveTo(0.96, -0.25, 0.9, -0.5, 0.78, -0.6); p.bezierCurveTo(0.4, -0.56, 0.0, -0.5, -0.4, -0.62); p.bezierCurveTo(-0.7, -0.7, -0.9, -0.55, -0.94, -0.2); p.lineTo(-0.92, 0.12); p.closePath(); }), alpha: 1, flow: 'side' }] },
-  { id: 'bob', name: 'บ็อบหน้าม้า', layers: [{ path: P(p => { p.moveTo(-1.28, 0.98); p.bezierCurveTo(-1.42, 0.0, -1.32, -1.48, 0, -1.46); p.bezierCurveTo(1.32, -1.48, 1.42, 0.0, 1.28, 0.98); p.bezierCurveTo(1.15, 1.06, 0.98, 1.04, 0.86, 0.94);
+  { id: 'manbun', sway: 0.05, name: 'แมนบัน', layers: [{ path: P(p => p.ellipse(0, -1.5, 0.33, 0.25, 0, 0, Math.PI * 2)), alpha: 1, tex: 'curl' }, { path: cap(-1.38, 1.07, -0.86), alpha: 1, flow: 'back', shine: 1.2 }] },
+  { id: 'pixie', sway: 0.2, name: 'พิกซี่', layers: [{ path: P(p => { capOuter(p, -1.38, 1.08); p.lineTo(0.92, 0.12); p.bezierCurveTo(0.96, -0.25, 0.9, -0.5, 0.78, -0.6); p.bezierCurveTo(0.4, -0.56, 0.0, -0.5, -0.4, -0.62); p.bezierCurveTo(-0.7, -0.7, -0.9, -0.55, -0.94, -0.2); p.lineTo(-0.92, 0.12); p.closePath(); }), alpha: 1, flow: 'side' }] },
+  { id: 'bob', sway: 0.7, name: 'บ็อบหน้าม้า', layers: [{ path: P(p => { p.moveTo(-1.28, 0.98); p.bezierCurveTo(-1.42, 0.0, -1.32, -1.48, 0, -1.46); p.bezierCurveTo(1.32, -1.48, 1.42, 0.0, 1.28, 0.98); p.bezierCurveTo(1.15, 1.06, 0.98, 1.04, 0.86, 0.94);
       p.bezierCurveTo(0.98, 0.45, 1.02, -0.1, 0.95, -0.42); p.bezierCurveTo(0.7, -0.5, 0.3, -0.52, 0, -0.5); p.bezierCurveTo(-0.3, -0.52, -0.7, -0.5, -0.95, -0.42); p.bezierCurveTo(-1.02, -0.1, -0.98, 0.45, -0.86, 0.94); p.bezierCurveTo(-0.98, 1.04, -1.15, 1.06, -1.28, 0.98); p.closePath(); }), alpha: 1, flow: 'down' }] },
-  { id: 'longstraight', name: 'ผมยาวตรง', layers: [{ path: longPath(false), alpha: 1, flow: 'downpart', shine: 1.2 }] },
-  { id: 'wavy', name: 'ผมยาวลอน', layers: [{ path: longPath(true), alpha: 1, flow: 'wave' }] },
+  { id: 'longstraight', sway: 1, name: 'ผมยาวตรง', layers: [{ path: longPath(false), alpha: 1, flow: 'downpart', shine: 1.2 }] },
+  { id: 'wavy', sway: 1, name: 'ผมยาวลอน', layers: [{ path: longPath(true), alpha: 1, flow: 'wave' }] },
 ];
 const HAIR_BY = Object.fromEntries(HAIR.map(h => [h.id, h]));
 
@@ -328,42 +331,190 @@ function shading(c, M, Pth, color, vTop, vBot, shine = 1, k = 1) {
 }
 function drawDots(c, M, arr, size, style) { c.fillStyle = style; for (let i = 0; i < arr.length; i += 2) { const u = arr[i], v = arr[i + 1]; c.fillRect(M.a * u + M.c * v + M.e, M.b * u + M.d * v + M.f, size, size); } }
 
-function drawHair(c, M, k, color, opacity, style) {
-  for (const L of style.layers) {
-    const Pth = tp(L.path, M);
-    c.save(); c.globalAlpha = L.alpha * opacity;
-    c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = 7 * k; c.fillStyle = color; c.fill(Pth); c.shadowColor = 'transparent'; c.shadowBlur = 0;
-    c.clip(Pth);
-    if (L.tex === 'stipple') {
-      drawDots(c, M, dots('hairdots', [-1.25, 1.25, -1.45, 0.25], 3600), Math.max(1, 1.7 * k), shade(color, -0.45, .75));
-      shading(c, M, Pth, color, -1.4, 0.3, .6, k);
-    } else {
-      shading(c, M, Pth, color, -1.9, L.flow === 'downpart' || L.flow === 'wave' ? 2.1 : 0.4, L.shine || 1, k);
-      const s = L.tex === 'curl' ? curls() : strands(L.flow);
-      c.lineCap = 'round';
-      c.lineWidth = Math.max(.5, 1.3 * k); c.strokeStyle = shade(color, -0.5, .5); c.stroke(tp(s.dark, M));
-      c.lineWidth = Math.max(.4, 1.0 * k); c.strokeStyle = shade(color, lum(color) > .6 ? .4 : .5, lum(color) > .6 ? .45 : .28); c.stroke(tp(s.light, M));
-      if (L.part) { const a = pt(M, -0.45, -0.84), b = pt(M, -0.52, -1.42); c.strokeStyle = 'rgba(232,196,176,.4)'; c.lineWidth = 2.2 * k; c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
-    }
-    c.restore();
+/* ---------- realistic hair: pre-rendered strand textures ---------- */
+const TU = 1.75, TV = 2.05, TWU = 3.5, THU = 4.45, OFFS = 8000;
+const mkC = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const texM = S => new DOMMatrix().scale(S).translate(TU, TV);
+const LONGF = { downpart: 1, wave: 1 };
+const realCache = {};
+function realStrands(flow) {
+  if (realCache[flow]) return realCache[flow];
+  const isB = flow === 'beard', isCurl = flow === 'curl', r = rng(isB ? 21 : isCurl ? 9 : 17), NB = 8;
+  const buckets = Array.from({ length: NB }, () => new Path2D());
+  const fly = [];
+  if (isCurl) {
+    for (let i = 0; i < 9000; i++) { const u = -1.6 + r() * 3.2, v = -2.0 + r() * 2.4, rad = 0.025 + r() * 0.045, a = r() * 6.28, p = buckets[(r() * NB) | 0];
+      p.moveTo(u + rad * Math.cos(a), v + rad * Math.sin(a)); p.arc(u, v, rad, a, a + 3.2 + r() * 2); }
+    return realCache[flow] = { buckets, fly };
   }
+  const n = isB ? 5000 : LONGF[flow] ? 9000 : 7000, step = isB ? 0.014 : 0.026, steps = isB ? 7 : LONGF[flow] ? 30 : 13;
+  const box = isB ? [-1.1, 1.1, 0.0, 1.2] : [-1.65, 1.65, -2.0, 2.25];
+  const F = FLOWS[flow] || FLOWS.down;
+  const walk = (u, v, nSteps, jitter) => {
+    const pts = [[u, v]], bias = (r() - .5) * 0.5;
+    for (let s = 0; s < nSteps; s++) { const [du, dv] = F(u, v), L = Math.hypot(du, dv) || 1; const a = Math.atan2(dv / L, du / L) + bias * 0.4 + (r() - .5) * jitter;
+      u += Math.cos(a) * step; v += Math.sin(a) * step; pts.push([u, v]); }
+    return pts;
+  };
+  for (let i = 0; i < n; i++) {
+    const u = box[0] + r() * (box[1] - box[0]), v = box[2] + r() * (box[3] - box[2]);
+    const pts = walk(u, v, steps, 0.25), p = buckets[Math.min(NB - 1, Math.floor(Math.pow(r(), 0.9) * NB))];
+    p.moveTo(pts[0][0], pts[0][1]); for (let j = 1; j < pts.length; j++) p.lineTo(pts[j][0], pts[j][1]);
+  }
+  if (!isB) for (let i = 0; i < 900; i++) fly.push(walk(box[0] + r() * (box[1] - box[0]), box[2] + r() * (box[3] - box[2]), 12, 0.9));
+  return realCache[flow] = { buckets, fly };
 }
-function drawBeard(c, M, k, color, opacity, b) {
-  const Pth = tp(b.path, M), rule = b.rule || 'nonzero';
-  c.save(); c.globalAlpha = opacity;
-  if (b.stubble) {
-    c.clip(Pth, rule); c.globalAlpha = opacity * .2; c.fillStyle = color; c.fillRect(0, 0, c.canvas.width, c.canvas.height);
-    c.globalAlpha = opacity * .8; drawDots(c, M, dots('beard', [-1.05, 1.05, 0.05, 1.2], 3800), Math.max(1, 1.5 * k), shade(color, -0.3, .7));
-    c.restore(); return;
+const BUCKET_LT = [-0.62, -0.48, -0.36, -0.24, -0.12, 0.0, 0.16, 0.34];
+function buildTex(layers, color, S, beard) {
+  const w = Math.ceil(TWU * S), h = Math.ceil(THU * S), tex = mkC(w, h), t = tex.getContext('2d'), TM = texM(S), k = S / 220, light = lum(color) > .6;
+  // contact shadow onto the skin just below the hair
+  if (!beard) for (const L of layers) { if (L.tex === 'stipple') continue;
+    t.save(); t.translate(-OFFS, 0); t.shadowOffsetX = OFFS; t.shadowOffsetY = 0.03 * S; t.shadowBlur = 0.07 * S; t.shadowColor = 'rgba(0,0,0,.38)'; t.fill(tp(L.path, TM), L.rule || 'nonzero'); t.restore(); }
+  for (const L of layers) {
+    const Pp = tp(L.path, TM), rule = L.rule || 'nonzero', lc = mkC(w, h), x = lc.getContext('2d');
+    if (L.tex === 'stipple' || L.stubble) {
+      x.save(); x.clip(Pp, rule);
+      const arr = L.stubble ? dots('beardR', [-1.05, 1.05, 0.05, 1.2], 16000) : dots('hairR', [-1.25, 1.25, -1.5, 0.25], 26000), sz = Math.max(.8, 1.15 * k);
+      for (let b = 0; b < 3; b++) { x.fillStyle = shade(color, [-0.55, -0.3, 0.05][b], L.stubble ? .55 : .8);
+        for (let i = b * 2; i < arr.length; i += 6) { const u = arr[i], v = arr[i + 1]; x.fillRect(TM.a * u + TM.e, TM.d * v + TM.f, sz, sz * 1.6); } }
+      x.globalAlpha = L.stubble ? .14 : .35; x.fillStyle = shade(color, -0.2); x.fillRect(0, 0, w, h);
+      x.restore();
+    } else {
+      x.fillStyle = shade(color, light ? -0.28 : -0.35); x.fill(Pp, rule);
+      x.save(); x.clip(Pp, rule);
+      const s = realStrands(L.tex === 'curl' ? 'curl' : L.flow); x.lineCap = 'round';
+      s.buckets.forEach((p, i) => { x.lineWidth = (beard ? 1.5 : 1.25) * k * (0.75 + (i % 3) * 0.25); x.strokeStyle = shade(color, BUCKET_LT[i] * (light ? .8 : 1), i > 5 ? .55 : .8); x.stroke(tp(p, TM)); });
+      // sheen band that follows the curve of the head
+      const c0 = pt(TM, 0, beard ? 0.5 : -0.35), R = (beard ? 0.7 : 1.15) * S;
+      const sh = x.createRadialGradient(c0.x, c0.y - R * 0.15, R * 0.55, c0.x, c0.y, R * 1.05);
+      sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(.55, `rgba(255,248,235,${(light ? .16 : .2) * (L.shine || 1)})`); sh.addColorStop(1, 'rgba(255,255,255,0)');
+      x.globalCompositeOperation = 'soft-light'; x.fillStyle = sh; x.fillRect(0, 0, w, h); x.fillRect(0, 0, w, h);
+      x.globalCompositeOperation = 'source-over';
+      const a = pt(TM, 0, beard ? 0.1 : -1.9), b = pt(TM, 0, beard ? 1.2 : (LONGF[L.flow] ? 2.2 : 0.4)), gr = x.createLinearGradient(a.x, a.y, b.x, b.y);
+      gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.45, 'rgba(0,0,0,0)'); gr.addColorStop(1, `rgba(0,0,0,${light ? .25 : .35})`);
+      x.fillStyle = gr; x.fillRect(0, 0, w, h);
+      x.restore();
+      // feather the silhouette
+      const m = mkC(w, h), mx = m.getContext('2d'); mx.translate(-OFFS, 0); mx.shadowOffsetX = OFFS; mx.shadowBlur = (beard ? 0.035 : 0.022) * S; mx.shadowColor = '#000'; mx.fill(Pp, rule);
+      x.globalCompositeOperation = 'destination-in'; x.drawImage(m, 0, 0); x.globalCompositeOperation = 'source-over';
+      // flyaway strands breaking the outline
+      if (s.fly.length) { let cnt = 0; const fp = new Path2D();
+        for (const pts of s.fly) { if (cnt > 140) break; const p0 = pt(TM, pts[0][0], pts[0][1]), p1 = pt(TM, pts[pts.length - 1][0], pts[pts.length - 1][1]);
+          if (t.isPointInPath(Pp, p0.x, p0.y, rule) && !t.isPointInPath(Pp, p1.x, p1.y, rule)) { cnt++; fp.moveTo(pts[0][0], pts[0][1]); for (let j = 1; j < pts.length; j++) fp.lineTo(pts[j][0], pts[j][1]); } }
+        x.lineWidth = 0.7 * k; x.strokeStyle = shade(color, light ? -0.1 : 0.05, .45); x.stroke(tp(fp, TM)); }
+    }
+    t.globalAlpha = L.alpha; t.drawImage(lc, 0, 0); t.globalAlpha = 1;
   }
-  c.shadowColor = 'rgba(0,0,0,.3)'; c.shadowBlur = 5 * k; c.fillStyle = color; c.fill(Pth, rule); c.shadowColor = 'transparent'; c.shadowBlur = 0;
-  c.clip(Pth, rule);
-  shading(c, M, Pth, color, 0.2, 1.2, .6, k);
-  const s = strands('beard'); c.lineCap = 'round';
-  c.lineWidth = Math.max(.5, 1.2 * k); c.strokeStyle = shade(color, -0.5, .55); c.stroke(tp(s.dark, M));
-  c.lineWidth = Math.max(.4, .9 * k); c.strokeStyle = shade(color, .45, .3); c.stroke(tp(s.light, M));
+  return tex;
+}
+const texCache = new Map();
+function getTex(key, layers, color, S, beard) {
+  const id = key + '|' + color + '|' + S;
+  if (texCache.has(id)) return texCache.get(id);
+  if (texCache.size > 6) texCache.delete(texCache.keys().next().value);
+  const tx = buildTex(layers, color, S, beard); texCache.set(id, tx); return tx;
+}
+function drawTex(c, tex, S, M, opacity, swayU) {
+  const inv = new DOMMatrix().translate(-TU, -TV).scale(1 / S), w = tex.width, h = tex.height;
+  c.save(); c.globalAlpha = opacity; c.imageSmoothingQuality = 'high';
+  if (!swayU || Math.abs(swayU) < 0.004) { c.setTransform(M.multiply(inv)); c.drawImage(tex, 0, 0); }
+  else { const N = 18, hs = Math.ceil(h / N);
+    for (let i = 0; i < N; i++) { const y0 = i * hs, v = (y0 + hs / 2) / S - TV, off = swayU * Math.max(0, v - 0.05) * 0.6;
+      c.setTransform(M.translate(off, 0).multiply(inv)); c.drawImage(tex, 0, y0, w, Math.min(hs + 1, h - y0), 0, y0, w, Math.min(hs + 1, h - y0)); } }
   c.restore();
 }
+function drawHair(c, M, k, color, opacity, style, swayU, S = 220) {
+  if (!style || !style.layers) return;
+  drawTex(c, getTex('h:' + style.id, style.layers, color, S, false), S, M, opacity, swayU * (style.sway || 0));
+}
+function drawBeard(c, M, k, color, opacity, b, S = 220) {
+  if (!b || !b.path) return;
+  const layers = [{ path: b.path, rule: b.rule, flow: 'beard', alpha: 1, stubble: b.stubble, shine: .6 }];
+  drawTex(c, getTex('b:' + b.id, layers, color, S, true), S, M, opacity, 0);
+}
+
+/* ---------- hair segmentation: remove real hair / recolor it ---------- */
+const SW = 144, SH = 192, HAIR_IDX = 1;
+const maskSmall = new Float32Array(SW * SH); let maskFor = null;
+const sc = mkC(SW, SH), sx = sc.getContext('2d', { willReadFrequently: true }), so = mkC(SW, SH), sox = so.getContext('2d');
+function updateMask(cm, type) {
+  const mw = cm.width, mh = cm.height, d = cm.getAsFloat32Array();
+  let vw = W, vh = H, s = 1, ox = 0, oy = 0;
+  if (type === 'video') { vw = video.videoWidth; vh = video.videoHeight; s = Math.max(W / vw, H / vh); ox = (W - vw * s) / 2; oy = (H - vh * s) / 2; }
+  for (let j = 0; j < SH; j++) for (let i = 0; i < SW; i++) {
+    let x = (i + .5) * W / SW, y = (j + .5) * H / SH;
+    if (type === 'video') x = W - x;
+    const vx = (x - ox) / s, vy = (y - oy) / s;
+    const mxp = Math.min(mw - 1, Math.max(0, (vx / vw * mw) | 0)), myp = Math.min(mh - 1, Math.max(0, (vy / vh * mh) | 0));
+    maskSmall[j * SW + i] = d[myp * mw + mxp];
+  }
+  maskFor = type; dirty = true;
+}
+function boxBlur(a, r, passes, tmp) {
+  for (let p = 0; p < passes; p++) {
+    for (let j = 0; j < SH; j++) { let acc = 0; const row = j * SW;
+      for (let i = -r; i <= r; i++) acc += a[row + Math.min(SW - 1, Math.max(0, i))];
+      for (let i = 0; i < SW; i++) { tmp[row + i] = acc / (2 * r + 1); acc += a[row + Math.min(SW - 1, i + r + 1)] - a[row + Math.max(0, i - r)]; } }
+    for (let i = 0; i < SW; i++) { let acc = 0;
+      for (let j = -r; j <= r; j++) acc += tmp[Math.min(SH - 1, Math.max(0, j)) * SW + i];
+      for (let j = 0; j < SH; j++) { a[j * SW + i] = acc / (2 * r + 1); acc += tmp[Math.min(SH - 1, j + r + 1) * SW + i] - tmp[Math.max(0, j - r) * SW + i]; } }
+  }
+}
+const bufs = ['m', 'w', 'r', 'g', 'b', 't'].reduce((o, k) => (o[k] = new Float32Array(SW * SH), o), {});
+const smooth = (e0, e1, x) => { const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+function softMask() {
+  const m = bufs.m, N = SW * SH;
+  for (let j = 0; j < SH; j++) for (let i = 0; i < SW; i++) { let mx = 0;
+    for (let dj = -2; dj <= 2; dj++) for (let di = -2; di <= 2; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < SW && jj < SH) { const v = maskSmall[jj * SW + ii]; if (v > mx) mx = v; } }
+    m[j * SW + i] = mx; }
+  boxBlur(m, 1, 1, bufs.t);
+  for (let i = 0; i < N; i++) m[i] = smooth(0.18, 0.6, m[i]);
+  return m;
+}
+function removeRealHair(c, gg) {
+  sx.drawImage(c.canvas, 0, 0, SW, SH);
+  const img = sx.getImageData(0, 0, SW, SH), d = img.data, N = SW * SH, m = softMask(), { w, r, g: gB, b } = bufs;
+  let mr = 0, mg = 0, mb = 0, mn = 0;
+  for (let i = 0; i < N; i++) { const wt = m[i] < 0.08 ? 1 : 0; w[i] = wt; r[i] = d[i * 4] * wt; gB[i] = d[i * 4 + 1] * wt; b[i] = d[i * 4 + 2] * wt; if (wt) { mr += d[i * 4]; mg += d[i * 4 + 1]; mb += d[i * 4 + 2]; mn++; } }
+  mr /= mn || 1; mg /= mn || 1; mb /= mn || 1;
+  for (const a of [w, r, gB, b]) boxBlur(a, 9, 3, bufs.t);
+  const Mi = faceM(gg).inverse(), sk = st.skin, out = sox.createImageData(SW, SH), o = out.data;
+  for (let j = 0; j < SH; j++) for (let i = 0; i < SW; i++) {
+    const n = j * SW + i, a = m[n]; if (a < 0.01) continue;
+    let R = mr, G = mg, B = mb; if (w[n] > 0.002) { R = r[n] / w[n]; G = gB[n] / w[n]; B = b[n] / w[n]; }
+    const X = (i + .5) * W / SW, Y = (j + .5) * H / SH, u = Mi.a * X + Mi.c * Y + Mi.e, v = Mi.b * X + Mi.d * Y + Mi.f;
+    const e = (u / 1.1) ** 2 + ((v + 0.36) / 1.08) ** 2, inside = (1 - smooth(0.86, 1.04, e)) * (1 - smooth(0.2, 0.42, v));
+    if (inside > 0) { const f = (0.93 + 0.1 * Math.min(1, Math.max(0, -v - 0.7))) * (1 - 0.13 * Math.min(1, e));
+      R += (sk[0] * f - R) * inside; G += (sk[1] * f - G) * inside; B += (sk[2] * f - B) * inside; }
+    o[n * 4] = R; o[n * 4 + 1] = G; o[n * 4 + 2] = B; o[n * 4 + 3] = Math.min(255, a * 290);
+  }
+  sox.putImageData(out, 0, 0);
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(so, 0, 0, c.canvas.width, c.canvas.height); c.restore();
+}
+function recolorRealHair(c, color) {
+  const m = softMask(), N = SW * SH, [R, G, B] = hexRgb(color), out = sox.createImageData(SW, SH), o = out.data;
+  for (let i = 0; i < N; i++) { o[i * 4] = R; o[i * 4 + 1] = G; o[i * 4 + 2] = B; o[i * 4 + 3] = m[i] * 235; }
+  sox.putImageData(out, 0, 0);
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.imageSmoothingQuality = 'high';
+  const L = lum(color);
+  if (L > .45) { c.globalCompositeOperation = 'screen'; c.globalAlpha = (L - .4) * 0.9; c.drawImage(so, 0, 0, W, H); }
+  c.globalAlpha = 1; c.globalCompositeOperation = 'color'; c.drawImage(so, 0, 0, W, H);
+  c.globalCompositeOperation = 'soft-light'; c.globalAlpha = .5; c.drawImage(so, 0, 0, W, H);
+  c.restore();
+}
+
+/* ---------- hair physics: lag when the head moves, hang with gravity when it tilts ---------- */
+const ph = { s: 0, v: 0, pcx: null, proll: 0 };
+function stepPhys() {
+  if (ph.pcx === null) { ph.pcx = g.cx; ph.proll = g.roll; }
+  const dcx = (g.cx - ph.pcx) / g.rx, dr = (g.roll - ph.proll) * Math.PI / 180;
+  ph.pcx = g.cx; ph.proll = g.roll;
+  ph.v += -dcx * 0.4 - dr * 0.3 - 0.15 * ph.s - 0.13 * ph.v;
+  ph.s = Math.max(-0.45, Math.min(0.45, ph.s + ph.v));
+  if (Math.abs(ph.s) > 0.003 || Math.abs(ph.v) > 0.003) dirty = true;
+}
+const swayNow = () => ph.s + Math.sin(g.roll * Math.PI / 180) * 0.8;
+
 function drawRemoval(c, M, k, rgb, strength) {
   const Pth = tp(REMOVE, M), OFF = 6000;
   c.save(); c.translate(-OFF, 0); c.shadowOffsetX = OFF; c.shadowBlur = 16 * k;
@@ -425,13 +576,15 @@ function renderScene(c, w, h, gg, o) {
   drawSource(c, w, h, gg, o.mode);
   if (o.before) return;
   const k = gg.rx / 142, Mf = faceM(gg);
-  if (o.removal > 0) {
-    if (o.mode === 'demo') o.skin = hexRgb(SKIN);
-    else if (o.sample && (o.mode !== 'video' || frameNo % 8 === 0 || !o.skin)) { const s = sampleSkin(c, Mf); if (s) st.skin = s; }
-    drawRemoval(c, Mf, k, o.skin || st.skin, o.removal);
-  }
-  if (o.beard && o.beard !== 'none') drawBeard(c, Mf, k, o.beardSame ? shade(o.color, -0.06) : o.beardColor, Math.min(1, o.opacity + .05), BEARD_BY[o.beard]);
-  if (o.hair) drawHair(c, hairM(gg, o), k, o.color, o.opacity, HAIR_BY[o.hair]);
+  const hasMask = o.sample && maskFor && maskFor === o.mode && o.mode !== 'demo';
+  const baldOn = hasMask && o.bald && o.hair && o.hair !== 'own';
+  if (o.mode === 'demo') o.skin = hexRgb(SKIN);
+  else if (o.sample && (o.removal > 0 || baldOn) && (o.mode !== 'video' || frameNo % 8 === 0)) { const s = sampleSkin(c, Mf); if (s) st.skin = s; }
+  if (baldOn) removeRealHair(c, gg);
+  if (hasMask && o.hair === 'own') recolorRealHair(c, o.color);
+  if (o.removal > 0) drawRemoval(c, Mf, k, o.mode === 'demo' ? o.skin : st.skin, o.removal);
+  if (o.beard && o.beard !== 'none') drawBeard(c, Mf, k, o.beardSame ? shade(o.color, -0.06) : o.beardColor, Math.min(1, o.opacity + .05), BEARD_BY[o.beard], o.texS || 220);
+  if (o.hair && o.hair !== 'own') drawHair(c, hairM(gg, o), k, o.color, o.opacity, HAIR_BY[o.hair], o.sway || 0, o.texS || 220);
   if (o.guide) {
     c.save(); c.setLineDash([12, 9]); c.lineWidth = 2.5; c.strokeStyle = 'rgba(255,255,255,.9)'; c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 4;
     c.stroke(tp(UNIT, Mf));
@@ -442,7 +595,7 @@ function renderScene(c, w, h, gg, o) {
     c.restore();
   }
 }
-const render = () => renderScene(ctx, W, H, g, { ...st, sample: true });
+const render = () => renderScene(ctx, W, H, g, { ...st, sample: true, sway: swayNow() });
 
 /* ---------- recommendations ---------- */
 const SHAPES = {
@@ -515,8 +668,9 @@ function drawThumbs() {
   for (const t of thumbs) {
     const x = t.c.getContext('2d');
     const tg = t.kind === 'hair' ? { cx: 100, cy: 128, rx: 46, ry: 60, roll: 0 } : { cx: 100, cy: 40, rx: 92, ry: 122, roll: 0 };
-    renderScene(x, 200, 230, tg, { mode: 'demo', hair: t.kind === 'hair' ? t.item.id : null, beard: t.kind === 'beard' ? t.item.id : 'none',
-      color: st.color, beardSame: st.beardSame, beardColor: st.beardColor, opacity: 1, hairOff: 0, hairScale: 1, removal: 0, guide: false });
+    renderScene(x, 200, 230, tg, { mode: 'demo', hair: t.kind === 'hair' ? (t.item.id === 'own' ? 'sidepart' : t.item.id) : null, beard: t.kind === 'beard' ? t.item.id : 'none',
+      color: st.color, beardSame: st.beardSame, beardColor: st.beardColor, opacity: 1, hairOff: 0, hairScale: 1, removal: 0, guide: false, texS: t.kind === 'hair' ? 80 : 150 });
+    if (t.item.id === 'own') { x.fillStyle = 'rgba(14,16,20,.6)'; x.fillRect(0, 186, 200, 44); x.fillStyle = '#fff'; x.font = '600 22px "IBM Plex Sans Thai", sans-serif'; x.textAlign = 'center'; x.fillText('ใช้ผมจริง', 100, 216); }
   }
 }
 function updateBadges() {
@@ -569,6 +723,7 @@ const syncSliders = () => {
   Object.values(sl).forEach(s => s.sync());
 };
 $('#autoTrack').onchange = e => { st.autoTrack = e.target.checked; tracked = false; if (st.autoTrack) { if (st.mode === 'photo') detectPhoto(); else ensureTracker(); } dirty = true; };
+$('#bald').onchange = e => { st.bald = e.target.checked; dirty = true; };
 $('#guide').onchange = e => { st.guide = e.target.checked; dirty = true; };
 $('#resetBtn').onclick = () => { g = { ...DEFAULT_G }; base.rx = g.rx; base.ry = g.ry; st.sizeMul = st.widthMul = 1; st.hairOff = 0; st.hairScale = 1; st.offX = st.offY = 0;
   sl.hairOff.el.value = 0; sl.hairScale.el.value = 100; syncSliders(); dirty = true; };
@@ -614,7 +769,7 @@ $('#camBtn').onclick = async () => {
   }
 };
 $('#snapBtn').onclick = () => {
-  const x = photo.getContext('2d'); drawSource(x, W, H, g, 'video'); stopCam(); setMode('photo'); if (tracked) setGuide(false);
+  const x = photo.getContext('2d'); drawSource(x, W, H, g, 'video'); stopCam(); if (maskFor === 'video') maskFor = 'photo'; setMode('photo'); if (tracked) setGuide(false);
   status('หยุดภาพแล้ว ลากกรอบให้ตรงหน้า แล้วลองทรงได้เต็มที่');
 };
 $('#selfieBtn').onclick = () => $('#selfieIn').click();
@@ -705,18 +860,34 @@ If there is no clear human face, return {"error":"short reason in Thai"}.`;
 /* face tracking (MediaPipe Face Landmarker, runs on device) */
 const MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
 const MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+const SEG_MODEL = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite';
+const SEG_FALLBACK = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/hair_segmenter/float32/latest/hair_segmenter.tflite';
+function segVideo() {
+  if (!segmenter || segMode !== 'VIDEO' || video.readyState < 2 || frameNo % 3) return;
+  if (!(st.bald || st.hair === 'own')) return;
+  try { segmenter.segmentForVideo(video, performance.now(), r => { const cm = r && r.confidenceMasks; if (cm && cm[HAIR_IDX]) updateMask(cm[HAIR_IDX], 'video'); }); } catch {}
+}
+async function segPhoto() {
+  if (!segmenter) return;
+  try { await segmenter.setOptions({ runningMode: 'IMAGE' }); segMode = 'IMAGE';
+    segmenter.segment(photo, r => { const cm = r && r.confidenceMasks; if (cm && cm[HAIR_IDX]) updateMask(cm[HAIR_IDX], 'photo'); });
+  } catch {} finally { try { await segmenter.setOptions({ runningMode: 'VIDEO' }); } catch {} segMode = 'VIDEO'; }
+}
 function ensureTracker() {
   if (!st.autoTrack) return Promise.resolve(null);
   if (tracker) return Promise.resolve(tracker);
   if (trackerLoad) return trackerLoad;
   const prev = $('#status').textContent;
-  status('กำลังโหลดระบบจับใบหน้า (ครั้งแรกประมาณ 5 MB)...');
+  status('กำลังโหลดระบบจับใบหน้าและแยกเส้นผม (ครั้งแรกประมาณ 22 MB)...');
   trackerLoad = (async () => {
     try {
       const vision = await import(MP + '/vision_bundle.mjs');
       const fs = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
       const mk = delegate => vision.FaceLandmarker.createFromOptions(fs, { baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: 'VIDEO', numFaces: 1 });
       try { tracker = await mk('GPU'); } catch { tracker = await mk('CPU'); }
+      const mkSeg = (url, delegate) => vision.ImageSegmenter.createFromOptions(fs, { baseOptions: { modelAssetPath: url, delegate }, runningMode: 'VIDEO', outputCategoryMask: false, outputConfidenceMasks: true });
+      for (const url of [SEG_MODEL, SEG_FALLBACK]) { try { segmenter = await mkSeg(url, 'GPU'); break; } catch { try { segmenter = await mkSeg(url, 'CPU'); break; } catch {} } }
+      segMode = 'VIDEO';
       trackerMode = 'VIDEO';
       status(st.mode === 'video' ? 'จับใบหน้าพร้อมแล้ว มองตรงเข้ากล้อง ผมและเคราจะขยับตามหัว' : prev);
       if (st.mode === 'photo') detectPhoto();
@@ -778,6 +949,7 @@ function trackVideo() {
 async function detectPhoto() {
   if (!st.autoTrack) return;
   const t = await ensureTracker(); if (!t || st.mode !== 'photo') return;
+  maskFor = null; segPhoto();
   try {
     await setTrackerMode('IMAGE');
     const res = t.detect(photo); const lm = res && res.faceLandmarks && res.faceLandmarks[0];
@@ -794,7 +966,8 @@ async function detectPhoto() {
 /* loop */
 drawThumbs(); updateBadges(); syncSliders();
 if (document.fonts) document.fonts.ready.then(() => dirty = true);
-(function loop() { frameNo++; if (st.mode === 'video') { dirty = true; if (st.autoTrack) trackVideo(); } if (dirty) { dirty = false; render(); } requestAnimationFrame(loop); })();
+(function loop() { frameNo++; if (st.mode === 'video') { dirty = true; if (st.autoTrack) trackVideo(); segVideo(); }
+  stepPhys(); if (dirty) { dirty = false; render(); } requestAnimationFrame(loop); })();
 })();
 </script>
 </body>
