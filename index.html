@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#b3262c">
+<meta name="description" content="ลองทรงผม สีผม หนวดเครา ผ่านกล้องสด พร้อมคำแนะนำทรงตามรูปหน้า">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+<title>ห้องลองทรงผม</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chonburi&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: barbershop mirror — stage (the mirror) left & sticky, the barber's tray of options right; stacks on phones */
+:root{
+  --bg:#eceef2; --surface:#ffffff; --ink:#15181e; --muted:#5b6371; --line:#d5d9e0;
+  --chip:#e5e8ee; --accent:#b3262c; --accent-ink:#ffffff; --pole:#1f3f8f;
+  --good:#1d7a4a; --good-bg:#e1f2e8; --warn:#9a5b06; --warn-bg:#fbefd9;
+  --font-display:'Chonburi','Kanit',Georgia,serif;
+  --font-body:'IBM Plex Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111318; --surface:#1a1d24; --ink:#eceef2; --muted:#9aa2b0; --line:#2b303a;
+  --chip:#242932; --accent:#e2494f; --accent-ink:#ffffff; --pole:#7b98e6;
+  --good:#5fd394; --good-bg:#16301f; --warn:#f0b356; --warn-bg:#33270f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111318; --surface:#1a1d24; --ink:#eceef2; --muted:#9aa2b0; --line:#2b303a;
+  --chip:#242932; --accent:#e2494f; --accent-ink:#ffffff; --pole:#7b98e6;
+  --good:#5fd394; --good-bg:#16301f; --warn:#f0b356; --warn-bg:#33270f; color-scheme:dark}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--font-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 32px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--pole);outline-offset:2px}
+header{max-width:1200px;margin:0 auto 14px;display:flex;flex-direction:column;gap:6px}
+h1{font-family:var(--font-display);font-weight:400;font-size:clamp(26px,5vw,36px);line-height:1.15;margin:0;text-wrap:balance}
+.lede{margin:0;color:var(--muted);max-width:62ch}
+.pole{height:6px;border-radius:3px;max-width:180px;
+  background:repeating-linear-gradient(135deg,var(--accent) 0 9px,var(--surface) 9px 14px,var(--pole) 14px 23px,var(--surface) 23px 28px)}
+.app{max-width:1200px;margin:0 auto;display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:920px){.app{grid-template-columns:minmax(0,1fr) minmax(0,450px);align-items:start}
+  .mirror{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
+.mirror{display:flex;flex-direction:column;gap:10px;min-width:0}
+.frame{position:relative;margin:0 auto;width:100%;max-width:min(100%,calc(66vh * .75));aspect-ratio:3/4;
+  border-radius:16px;overflow:hidden;background:#9aa4b2;box-shadow:0 0 0 6px var(--surface),0 0 0 7px var(--line)}
+#stage{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#stage:active{cursor:grabbing}
+.tag{position:absolute;left:10px;top:10px;font-size:12px;letter-spacing:.04em;background:rgba(14,16,20,.62);color:#fff;
+  padding:3px 9px;border-radius:999px;pointer-events:none}
+.hint{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:12px;color:#fff;pointer-events:none;
+  text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);
+  padding:8px 13px;border-radius:10px;cursor:pointer;font-weight:500;font-size:14px;user-select:none;-webkit-user-select:none}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn svg{width:17px;height:17px}
+.status{font-size:13px;color:var(--muted);text-align:center;min-height:1.4em;margin:0}
+.tray{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:600}
+.shapes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.shape{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:7px 8px;cursor:pointer;font-size:14px}
+.shape svg{width:22px;height:26px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8}
+.shape[aria-pressed="true"]{border-color:var(--accent);background:var(--surface);box-shadow:inset 0 0 0 1px var(--accent)}
+.ai{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rec{font-size:14px;display:flex;flex-direction:column;gap:8px}
+.rec p{margin:0;max-width:62ch}
+.rec .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.rec .lbl{font-size:12px;color:var(--muted);min-width:64px}
+.pill{border:none;border-radius:999px;padding:3px 10px;font-size:13px;cursor:pointer}
+.pill.good{background:var(--good-bg);color:var(--good)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.tip{border-left:3px solid var(--pole);padding-left:10px;color:var(--ink)}
+.empty{color:var(--muted);font-size:14px;margin:0}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;background:var(--chip);padding:4px;border-radius:11px}
+.tabs button{flex:1 0 auto;border:none;background:transparent;padding:7px 10px;border-radius:8px;cursor:pointer;font-size:14px;white-space:nowrap;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.opt{position:relative;border:1px solid var(--line);background:var(--bg);border-radius:11px;padding:4px 4px 7px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:3px;font-size:13px;line-height:1.25;text-align:center}
+.opt canvas{width:100%;height:auto;border-radius:8px;display:block}
+.opt[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--surface)}
+.opt .badge{position:absolute;top:6px;right:6px;font-size:10.5px;padding:1px 6px;border-radius:999px}
+.opt .badge.good{background:var(--good-bg);color:var(--good)}
+.opt .badge.warn{background:var(--warn-bg);color:var(--warn)}
+.opt.dim canvas{opacity:.6}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.sw{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;text-align:center;line-height:1.2}
+.sw i{display:block;width:34px;height:34px;border-radius:50%;box-shadow:inset 0 -6px 10px rgba(0,0,0,.25),inset 0 4px 6px rgba(255,255,255,.25)}
+.sw[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--surface)}
+.field{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.field label{font-size:14px}
+.field output{font-family:var(--font-mono);font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.field input{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.check input{accent-color:var(--accent);width:18px;height:18px}
+.note{font-size:13px;color:var(--muted);margin:0;max-width:62ch}
+.sub{font-size:13px;font-weight:600;margin:4px 0 0}
+#saveSheet{position:fixed;inset:0;background:rgba(10,12,16,.78);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:20;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) max(16px,env(safe-area-inset-left,0px))}
+#saveSheet img{max-height:70vh;max-width:100%;border-radius:12px}
+#saveSheet p{color:#fff;margin:0;text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="pole" aria-hidden="true"></div>
+  <h1>ห้องลองทรงผม</h1>
+  <p class="lede">เปิดกล้องหรือถ่ายเซลฟี่ แล้วลองทรงผม สีผม หนวดเครา หรือลองลบหนวดออกจากหน้าจริง พร้อมคำแนะนำทรงที่เข้ากับรูปหน้า</p>
+</header>
+
+<main class="app">
+  <section class="mirror" aria-label="กระจก">
+    <div class="frame">
+      <canvas id="stage" width="720" height="960" aria-label="ภาพตัวอย่างทรงผมบนใบหน้า"></canvas>
+      <span class="tag" id="modeTag">หุ่นตัวอย่าง</span>
+      <span class="hint" id="hint">ลากเพื่อเลื่อน · สองนิ้ว/ล้อเมาส์เพื่อย่อขยาย</span>
+    </div>
+    <div class="bar">
+      <button class="btn primary" id="camBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l5-3v10l-5-3M3 7h12v10H3z"/></svg>เปิดกล้อง</button>
+      <button class="btn" id="selfieBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>ถ่ายเซลฟี่</button>
+      <button class="btn" id="pickBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>เลือกรูป</button>
+      <button class="btn" id="snapBtn" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>หยุดภาพ</button>
+      <button class="btn" id="beforeBtn" type="button">กดค้าง ดูหน้าจริง</button>
+      <button class="btn" id="saveBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m-5-5l5 5 5-5M5 20h14"/></svg>บันทึกรูป</button>
+    </div>
+    <p class="status" id="status" role="status">ตอนนี้แสดงหุ่นตัวอย่าง กด "เปิดกล้อง" เพื่อลองกับหน้าตัวเองแบบสด ๆ</p>
+    <input type="file" id="selfieIn" accept="image/*" capture="user" hidden>
+    <input type="file" id="pickIn" accept="image/*" hidden>
+    <video id="video" playsinline muted hidden></video>
+  </section>
+
+  <section class="tray" aria-label="ตัวเลือก">
+    <div class="card">
+      <h2>รูปหน้าของคุณ</h2>
+      <div class="shapes" id="shapes"></div>
+      <div class="ai">
+        <button class="btn" id="aiBtn" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>ให้ AI วิเคราะห์หน้า</button>
+        <button class="btn" id="measureBtn" type="button" hidden>วัดรูปหน้าอีกครั้ง</button>
+        <span class="note" id="aiNote">เลือกรูปหน้าที่ใกล้เคียงที่สุด แล้วดูทรงที่แนะนำ</span>
+      </div>
+      <div class="rec" id="rec"><p class="empty">ยังไม่ได้เลือกรูปหน้า ทรงผมทุกทรงด้านล่างกดลองได้เลย</p></div>
+    </div>
+
+    <div class="card">
+      <div class="tabs" role="tablist" id="tabs">
+        <button role="tab" aria-selected="true" data-tab="hair" id="t-hair">ทรงผม</button>
+        <button role="tab" aria-selected="false" data-tab="color" id="t-color">สีผม</button>
+        <button role="tab" aria-selected="false" data-tab="beard" id="t-beard">หนวดเครา</button>
+        <button role="tab" aria-selected="false" data-tab="remove" id="t-remove">ลบหนวด</button>
+        <button role="tab" aria-selected="false" data-tab="fit" id="t-fit">ปรับให้พอดี</button>
+      </div>
+      <div role="tabpanel" data-panel="hair"><div class="grid" id="hairGrid"></div></div>
+      <div role="tabpanel" data-panel="color" hidden><div class="swatches" id="colorGrid"></div></div>
+      <div role="tabpanel" data-panel="beard" hidden>
+        <div class="grid" id="beardGrid"></div>
+        <label class="check"><input type="checkbox" id="beardSame" checked> ใช้สีเดียวกับผม</label>
+        <div class="swatches" id="beardColorGrid" hidden></div>
+      </div>
+      <div role="tabpanel" data-panel="remove" hidden>
+        <div class="field"><label for="removal">ลบหนวดเคราจากหน้าจริง</label><output id="removalOut">0%</output>
+          <input type="range" id="removal" min="0" max="100" value="0"></div>
+        <p class="note">ระบบดึงสีผิวจากแก้มมาเกลี่ยทับบริเวณหนวดและคาง ได้ผลดีเมื่อแสงสว่างสม่ำเสมอและหน้าอยู่ตรงกรอบ เปิดกรอบใบหน้าในแท็บ "ปรับให้พอดี" เพื่อจัดตำแหน่งให้ตรงก่อน</p>
+      </div>
+      <div role="tabpanel" data-panel="fit" hidden>
+        <label class="check"><input type="checkbox" id="autoTrack" checked> จับใบหน้าอัตโนมัติ (ผมขยับตามหัว)</label>
+        <label class="check"><input type="checkbox" id="guide"> แสดงกรอบใบหน้า (ไรผมถึงคาง)</label>
+        <div class="field"><label for="size">ขนาดใบหน้า</label><output id="sizeOut">100%</output><input type="range" id="size" min="40" max="220" value="100"></div>
+        <div class="field"><label for="width">ความกว้างใบหน้า</label><output id="widthOut">100%</output><input type="range" id="width" min="70" max="130" value="100"></div>
+        <div class="field"><label for="tilt">เอียงศีรษะ</label><output id="tiltOut">0°</output><input type="range" id="tilt" min="-30" max="30" value="0"></div>
+        <div class="field"><label for="hairOff">ระดับไรผม</label><output id="hairOffOut">0</output><input type="range" id="hairOff" min="-30" max="30" value="0"></div>
+        <div class="field"><label for="hairScale">ขนาดผม</label><output id="hairScaleOut">100%</output><input type="range" id="hairScale" min="80" max="125" value="100"></div>
+        <div class="field"><label for="opacity">ความกลืนของผม</label><output id="opacityOut">92%</output><input type="range" id="opacity" min="50" max="100" value="92"></div>
+        <button class="btn" id="resetBtn" type="button">คืนค่าตำแหน่ง</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="saveSheet" hidden>
+  <img id="saveImg" alt="ภาพทรงผมที่ลอง">
+  <p>กดค้างที่รูปเพื่อบันทึกลงเครื่อง</p>
+  <button class="btn" id="closeSheet" type="button">ปิด</button>
+</div>
+
+<script type="module">
+(() => {
+const W = 720, H = 960;
+const $ = s => document.querySelector(s);
+const cv = $('#stage');
+const ctx = cv.getContext('2d', { willReadFrequently: true });
+const video = $('#video');
+const photo = document.createElement('canvas'); photo.width = W; photo.height = H;
+
+const DEFAULT_G = { cx: 360, cy: 440, rx: 142, ry: 190, roll: 0 };
+let g = { ...DEFAULT_G };
+const st = {
+  mode: 'demo', hair: 'quiff', color: '#1b1714', beard: 'none', beardSame: true, beardColor: '#1b1714',
+  removal: 0, opacity: .92, hairOff: 0, hairScale: 1, guide: false, shape: null, before: false,
+  skin: [217, 169, 132], aiHair: null, aiBeard: null, aiAvoid: null, aiText: null, sizeMul: 1, widthMul: 1
+};
+let dirty = true, frameNo = 0, stream = null;
+let tracker = null, trackerLoad = null, trackerMode = 'VIDEO', lastVT = -1, tracked = false, lostFrames = 0;
+const shapeAcc = []; st.offX = 0; st.offY = 0; st.shapeManual = false; st.autoTrack = true;
+
+/* ---------- color helpers ---------- */
+const hexRgb = h => { h = h.replace('#', ''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
+const shade = (hex, t, a = 1) => { const c = hexRgb(hex).map(v => Math.round(t >= 0 ? v + (255 - v) * t : v * (1 + t))); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; };
+const lum = hex => { const [r, g2, b] = hexRgb(hex); return (0.299 * r + 0.587 * g2 + 0.114 * b) / 255; };
+
+/* ---------- geometry ---------- */
+const faceM = gg => new DOMMatrix().translate(gg.cx, gg.cy).rotate(gg.roll).scale(gg.rx, gg.ry);
+const hairM = (gg, o) => faceM(gg).translate(0, o.hairOff).translate(0, -0.9).scale(o.hairScale).translate(0, 0.9);
+const tp = (p, M) => { const q = new Path2D(); q.addPath(p, M); return q; };
+const pt = (M, u, v) => ({ x: M.a * u + M.c * v + M.e, y: M.b * u + M.d * v + M.f });
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const P = fn => { const p = new Path2D(); fn(p); return p; };
+
+const capOuter = (p, top, side = 1.06) => { p.moveTo(-0.99, 0.18); p.lineTo(-side, 0.02); p.bezierCurveTo(-side - 0.07, -0.62, -0.82, top, 0, top); p.bezierCurveTo(0.82, top, side + 0.07, -0.62, side, 0.02); p.lineTo(0.99, 0.18); };
+const hairline = (p, lv = -0.86) => { p.lineTo(0.92, 0.18); p.bezierCurveTo(0.95, -0.28, 0.92, -0.6, 0.72, lv + 0.08); p.bezierCurveTo(0.42, lv - 0.05, -0.42, lv - 0.05, -0.72, lv + 0.08); p.bezierCurveTo(-0.92, -0.6, -0.95, -0.28, -0.92, 0.18); p.closePath(); };
+const cap = (top, side, lv) => P(p => { capOuter(p, top, side); hairline(p, lv); });
+const topCap = (top, w = 0.86, lv = -0.86) => P(p => { p.moveTo(-w, -0.55); p.bezierCurveTo(-w - 0.08, -1.05, -0.7, top, 0, top); p.bezierCurveTo(0.7, top, w + 0.08, -1.05, w, -0.55); p.bezierCurveTo(0.86, -0.66, 0.8, -0.74, 0.72, lv + 0.08); p.bezierCurveTo(0.42, lv - 0.05, -0.42, lv - 0.05, -0.72, lv + 0.08); p.bezierCurveTo(-0.8, -0.74, -0.86, -0.66, -w, -0.55); p.closePath(); });
+const fade = a => ({ path: cap(-1.24, 1.04, -0.88), alpha: a, tex: 'stipple' });
+
+const longPath = (wavy) => P(p => {
+  p.moveTo(-1.36, 2.05); p.bezierCurveTo(-1.5, 0.4, -1.36, -1.5, 0, -1.47); p.bezierCurveTo(1.36, -1.5, 1.5, 0.4, 1.36, 2.05);
+  p.bezierCurveTo(1.15, 2.14, 0.9, 2.12, 0.72, 2.02); p.bezierCurveTo(0.7, 1.6, 0.62, 1.3, 0.66, 1.05); p.bezierCurveTo(0.84, 0.75, 1.02, 0.3, 0.98, -0.2);
+  p.bezierCurveTo(0.95, -0.62, 0.45, -0.96, 0.02, -1.0); p.bezierCurveTo(-0.45, -0.96, -0.95, -0.62, -0.98, -0.2); p.bezierCurveTo(-1.02, 0.3, -0.84, 0.75, -0.66, 1.05);
+  p.bezierCurveTo(-0.62, 1.3, -0.7, 1.6, -0.72, 2.02); p.bezierCurveTo(-0.9, 2.12, -1.15, 2.14, -1.36, 2.05); p.closePath();
+  if (wavy) {
+    for (let i = 0; i < 9; i++) { const v = 0.15 + i * 0.22, o = (i % 2 ? 0.1 : 0.02);
+      for (const s of [-1, 1]) { const x = s * (1.4 + o - Math.max(0, v - 1.6) * 0.2), y = v; p.moveTo(x + 0.15, y); p.arc(x, y, 0.15, 0, Math.PI * 2); } }
+    for (const x of [-1.15, -0.92, 0.92, 1.15]) { p.moveTo(x + 0.13, 2.08); p.arc(x, 2.08, 0.13, 0, Math.PI * 2); }
+  }
+});
+
+const HAIR = [
+  { id: 'buzz', name: 'บัซคัท', layers: [{ path: cap(-1.24, 1.04, -0.88), alpha: .62, tex: 'stipple' }] },
+  { id: 'crew', name: 'ครูว์คัท', layers: [fade(.5), { path: topCap(-1.36, 0.9), alpha: 1, flow: 'up' }] },
+  { id: 'sidepart', name: 'รองทรงแสกข้าง', layers: [{ path: cap(-1.46, 1.1, -0.86), alpha: 1, flow: 'side', part: true }] },
+  { id: 'pompadour', name: 'ปอมปาดัวร์', layers: [fade(.42), { path: P(p => { p.moveTo(-0.8, -0.62); p.bezierCurveTo(-0.98, -1.25, -0.62, -1.86, 0.05, -1.84); p.bezierCurveTo(0.7, -1.82, 1.0, -1.3, 0.8, -0.62); p.bezierCurveTo(0.45, -0.95, -0.45, -0.95, -0.8, -0.62); p.closePath(); }), alpha: 1, flow: 'back', shine: 1.4 }] },
+  { id: 'quiff', name: 'ควิฟฟ์', layers: [fade(.42), { path: P(p => { p.moveTo(-0.82, -0.6); p.bezierCurveTo(-0.98, -1.15, -0.55, -1.5, -0.05, -1.52); p.bezierCurveTo(0.3, -1.56, 0.45, -1.82, 0.55, -1.78); p.bezierCurveTo(0.95, -1.5, 1.02, -1.05, 0.82, -0.6); p.bezierCurveTo(0.45, -0.98, -0.45, -0.98, -0.82, -0.6); p.closePath(); }), alpha: 1, flow: 'up' }] },
+  { id: 'undercut', name: 'อันเดอร์คัทเสยหลัง', layers: [fade(.3), { path: topCap(-1.5, 0.84), alpha: 1, flow: 'back', shine: 1.3 }] },
+  { id: 'twoblock', name: 'ทูบล็อก', layers: [fade(.3), { path: P(p => { p.moveTo(-1.06, -0.45); p.bezierCurveTo(-1.14, -1.12, -0.68, -1.52, 0, -1.52); p.bezierCurveTo(0.68, -1.52, 1.14, -1.12, 1.06, -0.45);
+      let x = 1.06; for (let i = 0; i < 10; i++) { const nx = 1.06 - (i + 1) * 0.212, m = (x + nx) / 2; p.quadraticCurveTo(m, -0.52 - 0.17 * (1 - m * m), nx, -0.47 - 0.08 * (1 - nx * nx)); x = nx; } p.closePath(); }), alpha: 1, flow: 'down' }] },
+  { id: 'crop', name: 'เฟรนช์ครอป', layers: [fade(.45), { path: P(p => { p.moveTo(-0.97, -0.48); p.bezierCurveTo(-1.06, -1.1, -0.66, -1.36, 0, -1.36); p.bezierCurveTo(0.66, -1.36, 1.06, -1.1, 0.97, -0.48); p.lineTo(0.85, -0.62);
+      let x = 0.85; for (let i = 0; i < 12; i++) { const nx = 0.85 - (i + 1) * (1.7 / 12), m = (x + nx) / 2; p.quadraticCurveTo(m, -0.71, nx, -0.63); x = nx; } p.lineTo(-0.97, -0.48); p.closePath(); }), alpha: 1, flow: 'down' }] },
+  { id: 'curly', name: 'ผมหยิก', layers: [{ path: P(p => { capOuter(p, -1.5, 1.16); hairline(p, -0.8);
+      for (let a = Math.PI * 0.92; a <= Math.PI * 2.08; a += 0.21) { const x = 1.2 * Math.cos(a), y = -0.5 + 1.02 * Math.sin(a); if (y < 0.05) { p.moveTo(x + 0.17, y); p.arc(x, y, 0.17, 0, Math.PI * 2); } } }), alpha: 1, tex: 'curl' }] },
+  { id: 'longmen', name: 'ผมยาวประบ่า', layers: [{ path: P(p => { p.moveTo(-1.22, 1.28); p.bezierCurveTo(-1.36, 0.3, -1.32, -1.46, 0, -1.44); p.bezierCurveTo(1.32, -1.46, 1.36, 0.3, 1.22, 1.28); p.bezierCurveTo(1.1, 1.34, 0.98, 1.32, 0.88, 1.26);
+      p.bezierCurveTo(0.9, 0.8, 1.04, 0.2, 0.95, -0.35); p.bezierCurveTo(0.88, -0.7, 0.4, -0.95, 0.02, -0.98); p.bezierCurveTo(-0.4, -0.95, -0.88, -0.7, -0.95, -0.35); p.bezierCurveTo(-1.04, 0.2, -0.9, 0.8, -0.88, 1.26); p.bezierCurveTo(-0.98, 1.32, -1.1, 1.34, -1.22, 1.28); p.closePath(); }), alpha: 1, flow: 'downpart' }] },
+  { id: 'manbun', name: 'แมนบัน', layers: [{ path: P(p => p.ellipse(0, -1.5, 0.33, 0.25, 0, 0, Math.PI * 2)), alpha: 1, tex: 'curl' }, { path: cap(-1.38, 1.07, -0.86), alpha: 1, flow: 'back', shine: 1.2 }] },
+  { id: 'pixie', name: 'พิกซี่', layers: [{ path: P(p => { capOuter(p, -1.38, 1.08); p.lineTo(0.92, 0.12); p.bezierCurveTo(0.96, -0.25, 0.9, -0.5, 0.78, -0.6); p.bezierCurveTo(0.4, -0.56, 0.0, -0.5, -0.4, -0.62); p.bezierCurveTo(-0.7, -0.7, -0.9, -0.55, -0.94, -0.2); p.lineTo(-0.92, 0.12); p.closePath(); }), alpha: 1, flow: 'side' }] },
+  { id: 'bob', name: 'บ็อบหน้าม้า', layers: [{ path: P(p => { p.moveTo(-1.28, 0.98); p.bezierCurveTo(-1.42, 0.0, -1.32, -1.48, 0, -1.46); p.bezierCurveTo(1.32, -1.48, 1.42, 0.0, 1.28, 0.98); p.bezierCurveTo(1.15, 1.06, 0.98, 1.04, 0.86, 0.94);
+      p.bezierCurveTo(0.98, 0.45, 1.02, -0.1, 0.95, -0.42); p.bezierCurveTo(0.7, -0.5, 0.3, -0.52, 0, -0.5); p.bezierCurveTo(-0.3, -0.52, -0.7, -0.5, -0.95, -0.42); p.bezierCurveTo(-1.02, -0.1, -0.98, 0.45, -0.86, 0.94); p.bezierCurveTo(-0.98, 1.04, -1.15, 1.06, -1.28, 0.98); p.closePath(); }), alpha: 1, flow: 'down' }] },
+  { id: 'longstraight', name: 'ผมยาวตรง', layers: [{ path: longPath(false), alpha: 1, flow: 'downpart', shine: 1.2 }] },
+  { id: 'wavy', name: 'ผมยาวลอน', layers: [{ path: longPath(true), alpha: 1, flow: 'wave' }] },
+];
+const HAIR_BY = Object.fromEntries(HAIR.map(h => [h.id, h]));
+
+const mouthHole = p => p.ellipse(0, 0.565, 0.23, 0.062, 0, 0, Math.PI * 2);
+const FULLB = P(p => { p.moveTo(-1.0, 0.1); p.bezierCurveTo(-1.02, 0.55, -0.75, 1.05, 0, 1.15); p.bezierCurveTo(0.75, 1.05, 1.02, 0.55, 1.0, 0.1); p.lineTo(0.88, 0.1);
+  p.bezierCurveTo(0.82, 0.3, 0.62, 0.4, 0.42, 0.38); p.bezierCurveTo(0.32, 0.33, 0.15, 0.32, 0, 0.35); p.bezierCurveTo(-0.15, 0.32, -0.32, 0.33, -0.42, 0.38); p.bezierCurveTo(-0.62, 0.4, -0.82, 0.3, -0.88, 0.1); p.closePath(); mouthHole(p); });
+const MUST = p => { p.moveTo(-0.38, 0.52); p.bezierCurveTo(-0.35, 0.4, -0.15, 0.34, 0, 0.38); p.bezierCurveTo(0.15, 0.34, 0.35, 0.4, 0.38, 0.52); p.bezierCurveTo(0.2, 0.47, 0.1, 0.48, 0, 0.49); p.bezierCurveTo(-0.1, 0.48, -0.2, 0.47, -0.38, 0.52); p.closePath(); };
+const BEARD = [
+  { id: 'none', name: 'ไม่มี' },
+  { id: 'stubble', name: 'เคราเขียว', path: FULLB, rule: 'evenodd', stubble: true },
+  { id: 'mustache', name: 'หนวด', path: P(MUST) },
+  { id: 'goatee', name: 'เคราแพะ', rule: 'evenodd', path: P(p => { p.moveTo(-0.37, 0.5); p.bezierCurveTo(-0.32, 0.38, -0.15, 0.34, 0, 0.38); p.bezierCurveTo(0.15, 0.34, 0.32, 0.38, 0.37, 0.5); p.bezierCurveTo(0.36, 0.7, 0.3, 0.98, 0, 1.06); p.bezierCurveTo(-0.3, 0.98, -0.36, 0.7, -0.37, 0.5); p.closePath(); mouthHole(p); }) },
+  { id: 'vandyke', name: 'แวนไดค์', path: P(p => { MUST(p); p.moveTo(-0.2, 0.68); p.bezierCurveTo(-0.19, 0.86, -0.08, 1.05, 0, 1.13); p.bezierCurveTo(0.08, 1.05, 0.19, 0.86, 0.2, 0.68); p.bezierCurveTo(0.1, 0.72, -0.1, 0.72, -0.2, 0.68); p.closePath(); }) },
+  { id: 'chinstrap', name: 'เคราแนวกราม', path: P(p => { p.moveTo(-1.0, 0.1); p.bezierCurveTo(-1.02, 0.55, -0.75, 1.07, 0, 1.15); p.bezierCurveTo(0.75, 1.07, 1.02, 0.55, 1.0, 0.1); p.lineTo(0.9, 0.1); p.bezierCurveTo(0.9, 0.52, 0.62, 0.95, 0, 1.01); p.bezierCurveTo(-0.62, 0.95, -0.9, 0.52, -0.9, 0.1); p.closePath(); }) },
+  { id: 'full', name: 'เคราเต็ม', path: FULLB, rule: 'evenodd' },
+];
+const BEARD_BY = Object.fromEntries(BEARD.map(b => [b.id, b]));
+const REMOVE = P(p => { p.moveTo(-0.97, 0.15); p.bezierCurveTo(-1.0, 0.6, -0.72, 1.08, 0, 1.14); p.bezierCurveTo(0.72, 1.08, 1.0, 0.6, 0.97, 0.15); p.lineTo(0.8, 0.2); p.bezierCurveTo(0.6, 0.36, 0.3, 0.3, 0, 0.3); p.bezierCurveTo(-0.3, 0.3, -0.6, 0.36, -0.8, 0.2); p.closePath(); p.ellipse(0, 0.565, 0.2, 0.052, 0, 0, Math.PI * 2); });
+const UNIT = P(p => p.ellipse(0, 0, 1, 1, 0, 0, Math.PI * 2));
+
+/* ---------- textures ---------- */
+const FLOWS = {
+  up: (u, v) => [u * 0.25, -1],
+  back: (u, v) => [u * 0.18, -1],
+  side: (u, v) => v < -0.5 ? [(u > -0.45 ? 1 : -1), 0.12 + (Math.abs(u) > 0.8 ? 0.8 : 0)] : [Math.sign(u || 1) * 0.1, 1],
+  down: (u, v) => [u * 0.12, 1],
+  downpart: (u, v) => [Math.sign(u || 1) * Math.max(0.05, 0.9 - (v + 1.2) * 0.6), 1],
+  wave: (u, v) => [Math.sign(u || 1) * Math.max(0.05, 0.9 - (v + 1.2) * 0.6) + 0.8 * Math.sin(v * 8 + u * 2), 1],
+  beard: (u, v) => (v < 0.53 && Math.abs(u) < 0.45) ? [Math.sign(u || 1) * 0.9, 0.5] : [u * 0.35, 1],
+};
+const strandCache = {};
+function strands(flow) {
+  if (strandCache[flow]) return strandCache[flow];
+  const isB = flow === 'beard', r = rng(isB ? 11 : 7), dark = new Path2D(), light = new Path2D();
+  const n = isB ? 900 : 1100, step = isB ? 0.02 : 0.04, steps = isB ? 5 : 7;
+  const box = isB ? [-1.1, 1.1, 0.0, 1.2] : [-1.6, 1.6, -1.95, 2.2];
+  for (let i = 0; i < n; i++) {
+    let u = box[0] + r() * (box[1] - box[0]), v = box[2] + r() * (box[3] - box[2]);
+    const p = i % 3 === 0 ? light : dark; p.moveTo(u, v);
+    for (let s = 0; s < steps; s++) { const [du, dv] = FLOWS[flow](u, v), L = Math.hypot(du, dv) || 1; u += du / L * step + (r() - .5) * step * .35; v += dv / L * step + (r() - .5) * step * .35; p.lineTo(u, v); }
+  }
+  return strandCache[flow] = { dark, light };
+}
+let curlCache = null;
+function curls() {
+  if (curlCache) return curlCache;
+  const r = rng(5), dark = new Path2D(), light = new Path2D();
+  for (let i = 0; i < 1300; i++) { const u = -1.6 + r() * 3.2, v = -1.95 + r() * 2.3, rad = 0.035 + r() * 0.04, a = r() * 6.28, p = i % 3 ? dark : light;
+    p.moveTo(u + rad * Math.cos(a), v + rad * Math.sin(a)); p.arc(u, v, rad, a, a + 4.2); }
+  return curlCache = { dark, light };
+}
+const dotCache = {};
+function dots(key, box, n) { if (dotCache[key]) return dotCache[key]; const r = rng(key.length * 31), a = new Float32Array(n * 2); for (let i = 0; i < n; i++) { a[i * 2] = box[0] + r() * (box[1] - box[0]); a[i * 2 + 1] = box[2] + r() * (box[3] - box[2]); } return dotCache[key] = a; }
+const grain = (() => { const c = document.createElement('canvas'); c.width = c.height = 96; const x = c.getContext('2d'), d = x.createImageData(96, 96), r = rng(3); for (let i = 0; i < d.data.length; i += 4) { const v = 110 + r() * 60; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } x.putImageData(d, 0, 0); return c; })();
+
+/* ---------- drawing ---------- */
+function shading(c, M, Pth, color, vTop, vBot, shine = 1, k = 1) {
+  const L = lum(color), a = pt(M, 0, vTop), b = pt(M, 0, vBot);
+  const gr = c.createLinearGradient(a.x, a.y, b.x, b.y);
+  gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.14, `rgba(255,255,255,${(L > .6 ? .16 : .24) * shine})`);
+  gr.addColorStop(.32, 'rgba(255,255,255,0)'); gr.addColorStop(1, `rgba(0,0,0,${L > .6 ? .28 : .38})`);
+  c.fillStyle = gr; c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+  const o = pt(M, 0, -0.6), e = pt(M, 1.55, -0.6), R = Math.hypot(e.x - o.x, e.y - o.y);
+  const rg = c.createRadialGradient(o.x, o.y, R * .45, o.x, o.y, R);
+  rg.addColorStop(0, 'rgba(0,0,0,0)'); rg.addColorStop(1, 'rgba(0,0,0,.32)');
+  c.fillStyle = rg; c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+}
+function drawDots(c, M, arr, size, style) { c.fillStyle = style; for (let i = 0; i < arr.length; i += 2) { const u = arr[i], v = arr[i + 1]; c.fillRect(M.a * u + M.c * v + M.e, M.b * u + M.d * v + M.f, size, size); } }
+
+function drawHair(c, M, k, color, opacity, style) {
+  for (const L of style.layers) {
+    const Pth = tp(L.path, M);
+    c.save(); c.globalAlpha = L.alpha * opacity;
+    c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = 7 * k; c.fillStyle = color; c.fill(Pth); c.shadowColor = 'transparent'; c.shadowBlur = 0;
+    c.clip(Pth);
+    if (L.tex === 'stipple') {
+      drawDots(c, M, dots('hairdots', [-1.25, 1.25, -1.45, 0.25], 3600), Math.max(1, 1.7 * k), shade(color, -0.45, .75));
+      shading(c, M, Pth, color, -1.4, 0.3, .6, k);
+    } else {
+      shading(c, M, Pth, color, -1.9, L.flow === 'downpart' || L.flow === 'wave' ? 2.1 : 0.4, L.shine || 1, k);
+      const s = L.tex === 'curl' ? curls() : strands(L.flow);
+      c.lineCap = 'round';
+      c.lineWidth = Math.max(.5, 1.3 * k); c.strokeStyle = shade(color, -0.5, .5); c.stroke(tp(s.dark, M));
+      c.lineWidth = Math.max(.4, 1.0 * k); c.strokeStyle = shade(color, lum(color) > .6 ? .4 : .5, lum(color) > .6 ? .45 : .28); c.stroke(tp(s.light, M));
+      if (L.part) { const a = pt(M, -0.45, -0.84), b = pt(M, -0.52, -1.42); c.strokeStyle = 'rgba(232,196,176,.4)'; c.lineWidth = 2.2 * k; c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
+    }
+    c.restore();
+  }
+}
+function drawBeard(c, M, k, color, opacity, b) {
+  const Pth = tp(b.path, M), rule = b.rule || 'nonzero';
+  c.save(); c.globalAlpha = opacity;
+  if (b.stubble) {
+    c.clip(Pth, rule); c.globalAlpha = opacity * .2; c.fillStyle = color; c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+    c.globalAlpha = opacity * .8; drawDots(c, M, dots('beard', [-1.05, 1.05, 0.05, 1.2], 3800), Math.max(1, 1.5 * k), shade(color, -0.3, .7));
+    c.restore(); return;
+  }
+  c.shadowColor = 'rgba(0,0,0,.3)'; c.shadowBlur = 5 * k; c.fillStyle = color; c.fill(Pth, rule); c.shadowColor = 'transparent'; c.shadowBlur = 0;
+  c.clip(Pth, rule);
+  shading(c, M, Pth, color, 0.2, 1.2, .6, k);
+  const s = strands('beard'); c.lineCap = 'round';
+  c.lineWidth = Math.max(.5, 1.2 * k); c.strokeStyle = shade(color, -0.5, .55); c.stroke(tp(s.dark, M));
+  c.lineWidth = Math.max(.4, .9 * k); c.strokeStyle = shade(color, .45, .3); c.stroke(tp(s.light, M));
+  c.restore();
+}
+function drawRemoval(c, M, k, rgb, strength) {
+  const Pth = tp(REMOVE, M), OFF = 6000;
+  c.save(); c.translate(-OFF, 0); c.shadowOffsetX = OFF; c.shadowBlur = 16 * k;
+  c.shadowColor = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${strength})`; c.fillStyle = '#000'; c.fill(Pth, 'evenodd'); c.restore();
+  c.save(); c.translate(-OFF, 0); c.shadowOffsetX = OFF; c.shadowBlur = 26 * k;
+  c.shadowColor = `rgba(${rgb[0] * .8 | 0},${rgb[1] * .78 | 0},${rgb[2] * .76 | 0},${strength * .22})`;
+  c.fill(tp(P(p => { p.moveTo(-0.95, 0.5); p.bezierCurveTo(-0.85, 0.95, -0.5, 1.12, 0, 1.15); p.bezierCurveTo(0.5, 1.12, 0.85, 0.95, 0.95, 0.5); p.bezierCurveTo(0.7, 0.9, -0.7, 0.9, -0.95, 0.5); }), M));
+  c.restore();
+  c.save(); c.clip(Pth, 'evenodd'); c.globalAlpha = .07 * strength; c.globalCompositeOperation = 'overlay'; c.fillStyle = c.createPattern(grain, 'repeat'); c.fillRect(0, 0, c.canvas.width, c.canvas.height); c.restore();
+}
+function sampleSkin(c, M) {
+  const out = [0, 0, 0]; let n = 0;
+  for (const u of [-0.5, 0.5]) {
+    const q = pt(M, u, 0.1), s = 14, x = Math.round(q.x - s / 2), y = Math.round(q.y - s / 2);
+    if (x < 0 || y < 0 || x + s > c.canvas.width || y + s > c.canvas.height) continue;
+    const d = c.getImageData(x, y, s, s).data;
+    for (let i = 0; i < d.length; i += 4) { out[0] += d[i]; out[1] += d[i + 1]; out[2] += d[i + 2]; n++; }
+  }
+  return n ? out.map(v => Math.round(v / n)) : null;
+}
+
+const SKIN = '#d9a984';
+function drawMannequin(c, w, h, gg) {
+  const bg = c.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#d3d9e1'); bg.addColorStop(1, '#97a1af');
+  c.fillStyle = bg; c.fillRect(0, 0, w, h);
+  const M = faceM(gg), k = gg.rx / 142;
+  const f = (p, fill) => { c.fillStyle = fill; c.fill(tp(p, M)); };
+  f(P(p => { p.moveTo(-2.7, 3.4); p.bezierCurveTo(-2.6, 2.2, -1.7, 1.8, -0.55, 1.55); p.lineTo(0.55, 1.55); p.bezierCurveTo(1.7, 1.8, 2.6, 2.2, 2.7, 3.4); p.closePath(); }), '#2d3645');
+  f(P(p => { p.moveTo(-0.46, 0.55); p.lineTo(-0.5, 1.6); p.bezierCurveTo(-0.2, 1.8, 0.2, 1.8, 0.5, 1.6); p.lineTo(0.46, 0.55); p.closePath(); }), '#c18f6c');
+  f(P(p => { p.moveTo(-0.5, 1.55); p.lineTo(0, 2.1); p.lineTo(0.5, 1.55); p.lineTo(0.62, 1.62); p.lineTo(0, 2.3); p.lineTo(-0.62, 1.62); p.closePath(); }), '#3b4658');
+  for (const s of [-1, 1]) { f(P(p => p.ellipse(s * 0.99, 0.1, 0.14, 0.26, 0, 0, 7)), '#cf9b77'); f(P(p => p.ellipse(s * 1.0, 0.1, 0.07, 0.15, 0, 0, 7)), '#b98262'); }
+  const face = P(p => { p.moveTo(0, -1); p.bezierCurveTo(0.62, -1, 1, -0.62, 1, -0.05); p.bezierCurveTo(1, 0.45, 0.72, 0.95, 0, 1); p.bezierCurveTo(-0.72, 0.95, -1, 0.45, -1, -0.05); p.bezierCurveTo(-1, -0.62, -0.62, -1, 0, -1); p.closePath(); });
+  const o = pt(M, -0.2, -0.3), e = pt(M, 1.3, 0);
+  const rg = c.createRadialGradient(o.x, o.y, 4, o.x, o.y, Math.hypot(e.x - o.x, e.y - o.y));
+  rg.addColorStop(0, '#e9bf9e'); rg.addColorStop(.7, SKIN); rg.addColorStop(1, '#b98262');
+  f(face, rg);
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  const st2 = (p, col, lw) => { c.strokeStyle = col; c.lineWidth = lw * k; c.stroke(tp(p, M)); };
+  for (const s of [-1, 1]) {
+    st2(P(p => { p.moveTo(s * 0.16, -0.14); p.quadraticCurveTo(s * 0.38, -0.24, s * 0.58, -0.15); }), '#3a281e', 7);
+    f(P(p => p.ellipse(s * 0.37, 0.03, 0.15, 0.058, 0, 0, 7)), '#f5efe9');
+    f(P(p => p.ellipse(s * 0.37, 0.03, 0.056, 0.056, 0, 0, 7)), '#3b2a20');
+    st2(P(p => { p.moveTo(s * 0.22, 0.02); p.quadraticCurveTo(s * 0.37, -0.05, s * 0.52, 0.02); }), '#4a3226', 2.5);
+  }
+  st2(P(p => { p.moveTo(0.05, -0.02); p.quadraticCurveTo(0.12, 0.2, 0.1, 0.3); p.quadraticCurveTo(0.04, 0.34, -0.06, 0.32); }), 'rgba(140,88,62,.65)', 2.5);
+  f(P(p => { p.moveTo(-0.21, 0.565); p.quadraticCurveTo(-0.08, 0.5, 0, 0.535); p.quadraticCurveTo(0.08, 0.5, 0.21, 0.565); p.quadraticCurveTo(0, 0.6, -0.21, 0.565); }), '#a6574c');
+  f(P(p => { p.moveTo(-0.19, 0.57); p.quadraticCurveTo(0, 0.68, 0.19, 0.57); p.quadraticCurveTo(0, 0.6, -0.19, 0.57); }), '#bd6a5c');
+  c.restore();
+}
+function drawSource(c, w, h, gg, mode) {
+  if (mode === 'video' && video.readyState >= 2 && video.videoWidth) {
+    const vw = video.videoWidth, vh = video.videoHeight, s = Math.max(w / vw, h / vh);
+    c.save(); c.translate(w, 0); c.scale(-1, 1); c.drawImage(video, (w - vw * s) / 2, (h - vh * s) / 2, vw * s, vh * s); c.restore();
+  } else if (mode === 'photo') { c.drawImage(photo, 0, 0, w, h); }
+  else drawMannequin(c, w, h, gg);
+}
+function renderScene(c, w, h, gg, o) {
+  c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, w, h);
+  drawSource(c, w, h, gg, o.mode);
+  if (o.before) return;
+  const k = gg.rx / 142, Mf = faceM(gg);
+  if (o.removal > 0) {
+    if (o.mode === 'demo') o.skin = hexRgb(SKIN);
+    else if (o.sample && (o.mode !== 'video' || frameNo % 8 === 0 || !o.skin)) { const s = sampleSkin(c, Mf); if (s) st.skin = s; }
+    drawRemoval(c, Mf, k, o.skin || st.skin, o.removal);
+  }
+  if (o.beard && o.beard !== 'none') drawBeard(c, Mf, k, o.beardSame ? shade(o.color, -0.06) : o.beardColor, Math.min(1, o.opacity + .05), BEARD_BY[o.beard]);
+  if (o.hair) drawHair(c, hairM(gg, o), k, o.color, o.opacity, HAIR_BY[o.hair]);
+  if (o.guide) {
+    c.save(); c.setLineDash([12, 9]); c.lineWidth = 2.5; c.strokeStyle = 'rgba(255,255,255,.9)'; c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 4;
+    c.stroke(tp(UNIT, Mf));
+    const a = pt(Mf, -0.75, 0.03), b = pt(Mf, 0.75, 0.03); c.setLineDash([4, 7]); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
+    c.setLineDash([]); c.fillStyle = '#fff'; c.font = '600 22px "IBM Plex Sans Thai", sans-serif'; c.textAlign = 'center';
+    const t = pt(Mf, 0, -1.1); c.fillText('ไรผม', t.x, t.y); const ch = pt(Mf, 0, 1.17); c.fillText('คาง', ch.x, ch.y + 12);
+    const ey = pt(Mf, 1.0, 0.03); c.textAlign = 'left'; c.font = '500 18px "IBM Plex Sans Thai", sans-serif'; c.fillText('แนวตา', ey.x + 6, ey.y + 6);
+    c.restore();
+  }
+}
+const render = () => renderScene(ctx, W, H, g, { ...st, sample: true });
+
+/* ---------- recommendations ---------- */
+const SHAPES = {
+  oval: { name: 'รูปไข่', svg: '<ellipse cx="11" cy="13" rx="8" ry="11"/>', desc: 'สัดส่วนสมดุล หน้าผากกว้างกว่ากรามเล็กน้อย คางมน เข้าได้เกือบทุกทรง',
+    hair: ['sidepart', 'pompadour', 'quiff', 'undercut', 'bob', 'longstraight'], avoid: [], beard: ['stubble', 'full', 'mustache'], tip: 'ลองทรงที่เปิดหน้าผาก จะโชว์สัดส่วนหน้าได้เต็มที่' },
+  round: { name: 'กลม', svg: '<circle cx="11" cy="13" r="9.5"/>', desc: 'ความกว้างใกล้เคียงความยาว แก้มอิ่ม กรามมน',
+    hair: ['pompadour', 'quiff', 'undercut', 'sidepart', 'pixie'], avoid: ['bob', 'curly', 'crop', 'buzz'], beard: ['goatee', 'vandyke', 'full'], tip: 'เพิ่มความสูงด้านบนและเก็บด้านข้างให้สั้น หน้าจะดูยาวขึ้น เคราที่ยาวลงคางช่วยให้หน้าดูเรียว' },
+  square: { name: 'เหลี่ยม', svg: '<rect x="2" y="3" width="18" height="20" rx="4"/>', desc: 'หน้าผาก โหนกแก้ม และกรามกว้างพอ ๆ กัน กรามชัด',
+    hair: ['crew', 'buzz', 'crop', 'sidepart', 'quiff', 'wavy'], avoid: ['bob'], beard: ['stubble', 'chinstrap', 'full'], tip: 'ทรงสั้นเรียบโชว์กรามได้ดี ส่วนทรงที่มีลอนช่วยลดความแข็งของกราม' },
+  oblong: { name: 'ยาว', svg: '<rect x="4" y="1" width="14" height="24" rx="6"/>', desc: 'หน้ายาวกว่ากว้างชัดเจน หน้าผาก แก้ม กรามกว้างใกล้เคียงกัน',
+    hair: ['crop', 'twoblock', 'sidepart', 'curly', 'bob', 'wavy'], avoid: ['pompadour', 'quiff', 'manbun', 'longstraight'], beard: ['full', 'mustache', 'stubble'], tip: 'ปล่อยผมหน้าม้าลงมาและเพิ่มวอลุ่มด้านข้าง เลี่ยงการเซ็ตผมสูง' },
+  heart: { name: 'หัวใจ', svg: '<path d="M2 6c0-3 4-4 9-4s9 1 9 4c0 8-5 14-9 18C7 20 2 14 2 6z"/>', desc: 'หน้าผากกว้าง ช่วงแก้มเรียวลง คางแคบ',
+    hair: ['twoblock', 'crop', 'longmen', 'bob', 'wavy', 'pixie'], avoid: ['pompadour', 'undercut', 'buzz'], beard: ['full', 'chinstrap', 'stubble'], tip: 'ผมหน้าม้าลดความกว้างหน้าผาก เคราช่วยเติมช่วงคางให้สมดุล' },
+  diamond: { name: 'เพชร', svg: '<path d="M11 1l9 11-9 13-9-13z" stroke-linejoin="round"/>', desc: 'โหนกแก้มกว้างที่สุด หน้าผากและคางแคบ',
+    hair: ['twoblock', 'crop', 'quiff', 'longmen', 'sidepart', 'bob'], avoid: ['buzz', 'undercut', 'manbun'], beard: ['full', 'goatee', 'stubble'], tip: 'เพิ่มวอลุ่มบริเวณหน้าผากและคาง ให้สมดุลกับโหนกแก้ม' },
+};
+function currentRec() {
+  if (!st.shape) return null;
+  const s = SHAPES[st.shape];
+  return { ...s, hair: st.aiHair || s.hair, beard: st.aiBeard || s.beard, avoid: st.aiAvoid || s.avoid };
+}
+function renderRec() {
+  const r = currentRec(), box = $('#rec');
+  document.querySelectorAll('.shape').forEach(b => b.setAttribute('aria-pressed', b.dataset.shape === st.shape));
+  if (!r) { box.innerHTML = '<p class="empty">ยังไม่ได้เลือกรูปหน้า ทรงผมทุกทรงด้านล่างกดลองได้เลย</p>'; updateBadges(); return; }
+  box.innerHTML = '';
+  const add = (html) => { const d = document.createElement('div'); d.innerHTML = html; box.append(...d.childNodes); };
+  const p = document.createElement('p'); p.innerHTML = `<strong>หน้า${r.name}</strong> — `; p.append(st.aiText || r.desc); box.append(p);
+  const row = (label, ids, kind, type) => {
+    if (!ids.length) return;
+    const d = document.createElement('div'); d.className = 'row'; d.innerHTML = `<span class="lbl">${label}</span>`;
+    ids.forEach(id => { const it = type === 'hair' ? HAIR_BY[id] : BEARD_BY[id]; if (!it) return;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pill ' + kind; b.textContent = it.name;
+      b.onclick = () => { if (type === 'hair') setHair(id); else { setBeard(id); selectTab('beard'); } }; d.append(b); });
+    box.append(d);
+  };
+  row('ทรงที่แนะนำ', r.hair, 'good', 'hair');
+  row('ควรเลี่ยง', r.avoid, 'warn', 'hair');
+  row('หนวดเครา', r.beard, 'good', 'beard');
+  const t = document.createElement('p'); t.className = 'tip'; t.textContent = r.tip; box.append(t);
+  updateBadges();
+}
+
+/* ---------- UI build ---------- */
+const COLORS = [
+  ['ดำธรรมชาติ', '#1b1714'], ['น้ำตาลเข้ม', '#3b2619'], ['ช็อกโกแลต', '#5a3825'], ['น้ำตาลหม่น', '#6e6157'],
+  ['น้ำตาลทอง', '#9a6b3c'], ['บลอนด์', '#d2ad76'], ['แพลทินัม', '#e4ddd0'], ['เทาเงิน', '#a7a8ae'],
+  ['แดงไวน์', '#6d1a2a'], ['ทองแดง', '#a84b24'], ['น้ำเงินกรม', '#1f2f5c'], ['ชมพูพาสเทล', '#e0a0b6'],
+];
+const shapesBox = $('#shapes');
+for (const [id, s] of Object.entries(SHAPES)) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'shape'; b.dataset.shape = id; b.setAttribute('aria-pressed', 'false');
+  b.innerHTML = `<svg viewBox="0 0 22 26" aria-hidden="true">${s.svg}</svg><span>${s.name}</span>`;
+  b.onclick = () => { st.shapeManual = true; st.shape = st.shape === id ? null : id; st.aiHair = st.aiBeard = st.aiAvoid = st.aiText = null; renderRec(); };
+  shapesBox.append(b);
+}
+const thumbs = [];
+function makeOpt(grid, item, kind) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.dataset.id = item.id; b.setAttribute('aria-pressed', 'false');
+  const c = document.createElement('canvas'); c.width = 200; c.height = 230;
+  const n = document.createElement('span'); n.textContent = item.name;
+  const badge = document.createElement('span'); badge.className = 'badge'; badge.hidden = true;
+  b.append(c, n, badge); grid.append(b);
+  b.onclick = () => kind === 'hair' ? setHair(item.id) : setBeard(item.id);
+  thumbs.push({ c, item, kind, b, badge });
+}
+HAIR.forEach(h => makeOpt($('#hairGrid'), h, 'hair'));
+BEARD.forEach(h => makeOpt($('#beardGrid'), h, 'beard'));
+function drawThumbs() {
+  for (const t of thumbs) {
+    const x = t.c.getContext('2d');
+    const tg = t.kind === 'hair' ? { cx: 100, cy: 128, rx: 46, ry: 60, roll: 0 } : { cx: 100, cy: 40, rx: 92, ry: 122, roll: 0 };
+    renderScene(x, 200, 230, tg, { mode: 'demo', hair: t.kind === 'hair' ? t.item.id : null, beard: t.kind === 'beard' ? t.item.id : 'none',
+      color: st.color, beardSame: st.beardSame, beardColor: st.beardColor, opacity: 1, hairOff: 0, hairScale: 1, removal: 0, guide: false });
+  }
+}
+function updateBadges() {
+  const r = currentRec();
+  for (const t of thumbs) {
+    t.b.setAttribute('aria-pressed', t.kind === 'hair' ? st.hair === t.item.id : st.beard === t.item.id);
+    let kind = null;
+    if (r) { if ((t.kind === 'hair' ? r.hair : r.beard).includes(t.item.id)) kind = 'good'; else if (t.kind === 'hair' && r.avoid.includes(t.item.id)) kind = 'warn'; }
+    t.badge.hidden = !kind; t.b.classList.toggle('dim', kind === 'warn');
+    if (kind) { t.badge.className = 'badge ' + kind; t.badge.textContent = kind === 'good' ? 'แนะนำ' : 'เลี่ยง'; }
+  }
+}
+function swatches(box, getter, setter) {
+  box.innerHTML = '';
+  COLORS.forEach(([name, hex]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'sw'; b.setAttribute('aria-pressed', getter() === hex);
+    b.innerHTML = `<i style="background:${hex}"></i>${name}`;
+    b.onclick = () => { setter(hex); box.querySelectorAll('.sw').forEach(s => s.setAttribute('aria-pressed', s === b)); };
+    box.append(b);
+  });
+}
+swatches($('#colorGrid'), () => st.color, hex => { st.color = hex; drawThumbs(); dirty = true; });
+swatches($('#beardColorGrid'), () => st.beardColor, hex => { st.beardColor = hex; drawThumbs(); dirty = true; });
+$('#beardSame').onchange = e => { st.beardSame = e.target.checked; $('#beardColorGrid').hidden = st.beardSame; drawThumbs(); dirty = true; };
+
+function setHair(id) { st.hair = st.hair === id ? null : id; updateBadges(); dirty = true; }
+function setBeard(id) { st.beard = id; updateBadges(); dirty = true; }
+
+function selectTab(name) {
+  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === name));
+  document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== name);
+}
+$('#tabs').onclick = e => { const b = e.target.closest('button'); if (b) selectTab(b.dataset.tab); };
+
+/* sliders */
+const slider = (id, fmt, apply) => { const el = $('#' + id), out = $('#' + id + 'Out'); const upd = () => { out.textContent = fmt(+el.value); apply(+el.value); dirty = true; }; el.oninput = upd; return { el, sync: () => out.textContent = fmt(+el.value) }; };
+const base = { rx: g.rx, ry: g.ry };
+const applySize = () => { g.ry = base.ry * st.sizeMul; g.rx = base.rx * st.sizeMul * st.widthMul; };
+const sl = {
+  removal: slider('removal', v => v + '%', v => st.removal = v / 100),
+  size: slider('size', v => v + '%', v => { st.sizeMul = v / 100; applySize(); }),
+  width: slider('width', v => v + '%', v => { st.widthMul = v / 100; applySize(); }),
+  tilt: slider('tilt', v => v + '°', v => g.roll = v),
+  hairOff: slider('hairOff', v => (v > 0 ? '+' : '') + v, v => st.hairOff = v / 100),
+  hairScale: slider('hairScale', v => v + '%', v => st.hairScale = v / 100),
+  opacity: slider('opacity', v => v + '%', v => st.opacity = v / 100),
+};
+const syncSliders = () => {
+  sl.size.el.value = Math.round(st.sizeMul * 100); sl.width.el.value = Math.round(st.widthMul * 100); sl.tilt.el.value = Math.round(g.roll);
+  Object.values(sl).forEach(s => s.sync());
+};
+$('#autoTrack').onchange = e => { st.autoTrack = e.target.checked; tracked = false; if (st.autoTrack) { if (st.mode === 'photo') detectPhoto(); else ensureTracker(); } dirty = true; };
+$('#guide').onchange = e => { st.guide = e.target.checked; dirty = true; };
+$('#resetBtn').onclick = () => { g = { ...DEFAULT_G }; base.rx = g.rx; base.ry = g.ry; st.sizeMul = st.widthMul = 1; st.hairOff = 0; st.hairScale = 1; st.offX = st.offY = 0;
+  sl.hairOff.el.value = 0; sl.hairScale.el.value = 100; syncSliders(); dirty = true; };
+const setGuide = on => { st.guide = on; $('#guide').checked = on; };
+
+/* pointer: drag & pinch */
+const ptrs = new Map(); let pinch0 = null;
+const toCanvas = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; };
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, toCanvas(e)); if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = { d: Math.hypot(a.x - b.x, a.y - b.y), m: st.sizeMul }; } });
+cv.addEventListener('pointermove', e => {
+  if (!ptrs.has(e.pointerId)) return; const p = toCanvas(e), prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, p);
+  if (ptrs.size === 1) { if (tracked) { st.offX += p.x - prev.x; st.offY += p.y - prev.y; } else { g.cx += p.x - prev.x; g.cy += p.y - prev.y; } dirty = true; }
+  else if (ptrs.size === 2 && pinch0) { const [a, b] = [...ptrs.values()]; st.sizeMul = Math.min(2.2, Math.max(.4, pinch0.m * Math.hypot(a.x - b.x, a.y - b.y) / pinch0.d)); applySize(); syncSliders(); dirty = true; }
+});
+const up = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = null; };
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+cv.addEventListener('wheel', e => { e.preventDefault(); st.sizeMul = Math.min(2.2, Math.max(.4, st.sizeMul * (e.deltaY < 0 ? 1.04 : 1 / 1.04))); applySize(); syncSliders(); dirty = true; }, { passive: false });
+
+/* before/after */
+const bb = $('#beforeBtn');
+const bOn = e => { e.preventDefault(); st.before = true; dirty = true; }, bOff = () => { st.before = false; dirty = true; };
+bb.addEventListener('pointerdown', bOn); ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => bb.addEventListener(t, bOff));
+bb.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') bOn(e); }); bb.addEventListener('keyup', bOff);
+
+/* sources */
+const status = t => $('#status').textContent = t;
+function setMode(m) {
+  st.mode = m; $('#modeTag').textContent = { demo: 'หุ่นตัวอย่าง', video: '● กล้องสด', photo: 'รูปของคุณ' }[m];
+  $('#snapBtn').hidden = m !== 'video'; $('#camBtn').lastChild.textContent = m === 'video' ? 'ปิดกล้อง' : 'เปิดกล้อง';
+  dirty = true;
+}
+function stopCam() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; } }
+$('#camBtn').onclick = async () => {
+  if (st.mode === 'video') { stopCam(); setMode('demo'); tracked = false; status('ปิดกล้องแล้ว'); return; }
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error('no');
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 1280 } }, audio: false });
+    video.srcObject = stream; await video.play();
+    setMode('video'); setGuide(!st.autoTrack); shapeAcc.length = 0; measured = false; tracked = false; st.offX = st.offY = 0; ensureTracker();
+    status('จัดหน้าให้อยู่ในกรอบเส้นประ ไรผมชนขอบบน คางชนขอบล่าง แล้วกด "หยุดภาพ" เพื่อปรับละเอียด');
+  } catch (err) {
+    status(err && err.name === 'NotAllowedError' ? 'ยังไม่ได้อนุญาตกล้อง กดรูปแม่กุญแจ/ไอคอนกล้องที่แถบที่อยู่เว็บ แล้วเลือกอนุญาต' : 'เปิดกล้องไม่ได้ ลองปิดแอปอื่นที่ใช้กล้องอยู่ หรือใช้ปุ่ม "ถ่ายเซลฟี่" แทน');
+  }
+};
+$('#snapBtn').onclick = () => {
+  const x = photo.getContext('2d'); drawSource(x, W, H, g, 'video'); stopCam(); setMode('photo'); if (tracked) setGuide(false);
+  status('หยุดภาพแล้ว ลากกรอบให้ตรงหน้า แล้วลองทรงได้เต็มที่');
+};
+$('#selfieBtn').onclick = () => $('#selfieIn').click();
+$('#pickBtn').onclick = () => $('#pickIn').click();
+async function loadFile(file) {
+  if (!file) return;
+  try {
+    const url = URL.createObjectURL(file); const img = new Image(); img.src = url; await img.decode();
+    const x = photo.getContext('2d'), s = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+    x.fillStyle = '#888'; x.fillRect(0, 0, W, H);
+    x.drawImage(img, (W - img.naturalWidth * s) / 2, (H - img.naturalHeight * s) / 2, img.naturalWidth * s, img.naturalHeight * s);
+    URL.revokeObjectURL(url); stopCam(); tracked = false; st.offX = st.offY = 0; setMode('photo'); setGuide(true); detectPhoto();
+    status(aiReady ? 'โหลดรูปแล้ว กด "ให้ AI วิเคราะห์หน้า" เพื่อจัดกรอบและแนะนำทรงอัตโนมัติ หรือลากกรอบเอง' : 'โหลดรูปแล้ว ลากและย่อขยายกรอบเส้นประให้ตรงหน้า (ไรผมถึงคาง)');
+  } catch { status('เปิดรูปนี้ไม่ได้ ลองไฟล์ JPG หรือ PNG'); }
+}
+$('#selfieIn').onchange = e => { loadFile(e.target.files[0]); e.target.value = ''; };
+$('#pickIn').onchange = e => { loadFile(e.target.files[0]); e.target.value = ''; };
+
+/* save */
+let downloads = null;
+$('#saveBtn').onclick = async () => {
+  const off = document.createElement('canvas'); off.width = W; off.height = H;
+  renderScene(off.getContext('2d'), W, H, g, { ...st, guide: false, before: false, sample: false });
+  if (downloads) {
+    const blob = await new Promise(r => off.toBlob(r, 'image/png'));
+    try { await downloads.save({ filename: 'hair-tryon.png', data: blob }); status('บันทึกรูปแล้ว'); return; }
+    catch (e) { if (e && e.code === 'declined') { status('ยกเลิกการบันทึก'); return; } }
+  }
+  try {
+    const blob = await new Promise(r => off.toBlob(r, 'image/png'));
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'hair-tryon.png';
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    if (/iPhone|iPad|Android/i.test(navigator.userAgent)) { $('#saveImg').src = off.toDataURL('image/png'); $('#saveSheet').hidden = false; }
+    else status('บันทึกรูปแล้ว (ดูในโฟลเดอร์ดาวน์โหลด)');
+  } catch { $('#saveImg').src = off.toDataURL('image/png'); $('#saveSheet').hidden = false; }
+};
+$('#closeSheet').onclick = () => $('#saveSheet').hidden = true;
+
+/* AI analysis */
+let sampleFn = null, aiReady = false;
+const HAIR_IDS = HAIR.map(h => h.id), BEARD_IDS = BEARD.filter(b => b.id !== 'none').map(b => b.id);
+$('#aiBtn').onclick = async () => {
+  const btn = $('#aiBtn'), note = $('#aiNote');
+  btn.disabled = true; note.textContent = 'กำลังวิเคราะห์ใบหน้า...';
+  try {
+    const full = document.createElement('canvas'); full.width = W; full.height = H; drawSource(full.getContext('2d'), W, H, g, st.mode);
+    const sm = document.createElement('canvas'); sm.width = 480; sm.height = 640; sm.getContext('2d').drawImage(full, 0, 0, 480, 640);
+    const blob = await new Promise(r => sm.toBlob(r, 'image/jpeg', .88));
+    const prompt = `You are a professional barber and hair stylist. Look at the face in the attached image (480x640, portrait).
+Return ONLY a JSON object, no prose, with this shape:
+{"faceShape":"oval|round|square|oblong|heart|diamond",
+ "summary":"2 short sentences in Thai describing the visible face proportions (forehead, cheekbones, jaw, length) that led to this shape",
+ "hair":[3-5 ids best suited, best first], "avoid":[0-3 ids], "beard":[2-3 ids],
+ "tip":"one practical styling tip in Thai for this face",
+ "faceBox":{"cx":0-1,"cy":0-1,"rx":0-1,"ry":0-1,"roll":degrees}}
+Hair ids: ${HAIR_IDS.join(', ')}. Beard ids: ${BEARD_IDS.join(', ')}.
+faceBox: an ellipse in normalized image coordinates (x by width, y by height) where cy is the vertical center between the HAIRLINE (top of forehead) and the bottom of the CHIN, ry is half that distance divided by image height, cx is the horizontal face center, rx is half the face width at cheekbone level divided by image width, roll is head tilt in degrees (positive = clockwise on screen).
+If there is no clear human face, return {"error":"short reason in Thai"}.`;
+    const res = await sampleFn.json(prompt, { images: [blob], modelTier: 'default' });
+    if (!res || res.error) { note.textContent = res?.error || 'ไม่พบใบหน้าที่ชัดเจน ลองรูปหน้าตรงที่แสงสว่าง'; return; }
+    if (SHAPES[res.faceShape]) st.shape = res.faceShape;
+    const ok = (a, ids) => Array.isArray(a) ? a.filter(x => ids.includes(x)) : null;
+    st.aiHair = ok(res.hair, HAIR_IDS); st.aiBeard = ok(res.beard, BEARD_IDS); st.aiAvoid = ok(res.avoid, HAIR_IDS);
+    if (st.aiHair && !st.aiHair.length) st.aiHair = null; if (st.aiBeard && !st.aiBeard.length) st.aiBeard = null;
+    st.aiText = typeof res.summary === 'string' ? res.summary : null;
+    if (typeof res.tip === 'string') SHAPES[st.shape] && (SHAPES[st.shape] = { ...SHAPES[st.shape], tip: res.tip });
+    const fb = res.faceBox;
+    if (fb && [fb.cx, fb.cy, fb.rx, fb.ry].every(v => typeof v === 'number' && v > 0 && v < 1.2) && st.mode !== 'video') {
+      g.cx = fb.cx * W; g.cy = fb.cy * H; base.ry = fb.ry * H; base.rx = fb.rx * W * 1.08; st.sizeMul = st.widthMul = 1;
+      g.roll = Math.max(-30, Math.min(30, +fb.roll || 0)); applySize(); syncSliders();
+    }
+    if (st.aiHair) st.hair = st.aiHair[0];
+    renderRec(); dirty = true;
+    note.textContent = 'วิเคราะห์เสร็จ ใส่ทรงอันดับหนึ่งให้แล้ว ถ้ากรอบยังไม่ตรงลากปรับได้';
+  } catch (e) {
+    const c = e && e.code;
+    note.textContent = c === 'not_granted' ? 'ไม่ได้อนุญาตให้ใช้ AI เลือกรูปหน้าเองได้ด้านบน' : c === 'rate_limited' ? 'ใช้งานถี่เกินไป รอสักครู่แล้วลองใหม่' : 'วิเคราะห์ไม่สำเร็จ ลองอีกครั้ง หรือเลือกรูปหน้าเอง';
+  } finally { btn.disabled = false; }
+};
+
+(async () => {
+  if (!window.claude?.use) return;
+  try { sampleFn = await window.claude.use('sample');
+    if (sampleFn) { const lim = await sampleFn.limits?.().catch(() => null); if (!lim || lim.images) { aiReady = true; $('#aiBtn').hidden = false; $('#aiNote').textContent = 'หรือถ่ายรูปแล้วให้ AI ดูให้'; } } } catch {}
+  try { downloads = await window.claude.use('downloads'); } catch {}
+})();
+
+/* face tracking (MediaPipe Face Landmarker, runs on device) */
+const MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+function ensureTracker() {
+  if (!st.autoTrack) return Promise.resolve(null);
+  if (tracker) return Promise.resolve(tracker);
+  if (trackerLoad) return trackerLoad;
+  const prev = $('#status').textContent;
+  status('กำลังโหลดระบบจับใบหน้า (ครั้งแรกประมาณ 5 MB)...');
+  trackerLoad = (async () => {
+    try {
+      const vision = await import(MP + '/vision_bundle.mjs');
+      const fs = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
+      const mk = delegate => vision.FaceLandmarker.createFromOptions(fs, { baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: 'VIDEO', numFaces: 1 });
+      try { tracker = await mk('GPU'); } catch { tracker = await mk('CPU'); }
+      trackerMode = 'VIDEO';
+      status(st.mode === 'video' ? 'จับใบหน้าพร้อมแล้ว มองตรงเข้ากล้อง ผมและเคราจะขยับตามหัว' : prev);
+      if (st.mode === 'photo') detectPhoto();
+      return tracker;
+    } catch (e) {
+      trackerLoad = null;
+      status('โหลดระบบจับใบหน้าไม่ได้ (เช็กอินเทอร์เน็ต) ยังลากกรอบเส้นประจัดตำแหน่งเองได้');
+      setGuide(true); return null;
+    }
+  })();
+  return trackerLoad;
+}
+async function setTrackerMode(m) { if (tracker && trackerMode !== m) { await tracker.setOptions({ runningMode: m }); trackerMode = m; } }
+const d2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function applyLandmarks(lm, map, ease) {
+  const Q = i => map(lm[i]);
+  const top = Q(10), chin = Q(152), L = Q(234), R = Q(454);
+  const len = d2(top, chin), dx = (chin.x - top.x) / len, dy = (chin.y - top.y) / len;
+  const ry = len * 1.09 / 2, rx = d2(L, R) / 2 * 0.96;
+  const mx = (top.x + chin.x) / 2 - dx * len * 0.045, my = (top.y + chin.y) / 2 - dy * len * 0.045;
+  const cx = mx * 0.6 + (L.x + R.x) / 2 * 0.4, cy = my;
+  const roll = Math.atan2(-dx, dy) * 180 / Math.PI;
+  const e = (a, b) => a + (b - a) * ease;
+  base.rx = e(base.rx, rx); base.ry = e(base.ry, ry); applySize();
+  g.cx = e(g.cx - st.offX, cx) + st.offX; g.cy = e(g.cy - st.offY, cy) + st.offY; g.roll = e(g.roll, roll);
+  sl.tilt.el.value = Math.round(g.roll); sl.tilt.sync();
+  // proportions for face-shape estimate
+  shapeAcc.push({ len: len * 1.09, f: d2(Q(54), Q(284)), c: d2(L, R), j: d2(Q(172), Q(397)) });
+  if (shapeAcc.length > 30) shapeAcc.shift();
+}
+function estimateShape() {
+  if (shapeAcc.length < 8) return;
+  const m = k => shapeAcc.reduce((s, a) => s + a[k], 0) / shapeAcc.length;
+  const len = m('len'), f = m('f') / m('c'), j = m('j') / m('c'), r = len / m('c');
+  let shape;
+  if (r > 1.48) shape = 'oblong';
+  else if (f - j > 0.07) shape = 'heart';
+  else if (f < 0.7 && j < 0.75) shape = 'diamond';
+  else if (r < 1.2) shape = j > 0.83 ? 'square' : 'round';
+  else shape = j > 0.86 ? 'square' : 'oval';
+  if (!st.shapeManual || !st.shape) { st.shape = shape; st.aiHair = st.aiBeard = st.aiAvoid = null; st.aiText = null; renderRec(); }
+  $('#aiNote').textContent = `วัดได้ใกล้เคียงหน้า${SHAPES[shape].name} (ยาว:กว้าง ${r.toFixed(2)}) ถ้าไม่ตรงกดเลือกเองได้`;
+  $('#measureBtn').hidden = false;
+}
+$('#measureBtn').onclick = () => { shapeAcc.length = 0; st.shapeManual = false; measured = false; if (st.mode === 'photo') detectPhoto(); else $('#aiNote').textContent = 'กำลังวัด มองตรงเข้ากล้องสักครู่...'; };
+let measured = false;
+function trackVideo() {
+  if (!tracker || !st.autoTrack || trackerMode !== 'VIDEO' || video.readyState < 2) return;
+  if (video.currentTime === lastVT) return; lastVT = video.currentTime;
+  let res; try { res = tracker.detectForVideo(video, performance.now()); } catch { return; }
+  const lm = res && res.faceLandmarks && res.faceLandmarks[0];
+  if (!lm) { if (++lostFrames > 15 && tracked) { tracked = false; $('#hint').textContent = 'ไม่เห็นใบหน้า หันหน้าเข้ากล้อง'; } return; }
+  lostFrames = 0;
+  const vw = video.videoWidth, vh = video.videoHeight, s = Math.max(W / vw, H / vh), ox = (W - vw * s) / 2, oy = (H - vh * s) / 2;
+  applyLandmarks(lm, p => ({ x: W - (ox + p.x * vw * s), y: oy + p.y * vh * s }), tracked ? 0.45 : 1);
+  if (!tracked) { tracked = true; setGuide(false); $('#hint').textContent = 'ลากเพื่อขยับผม · สองนิ้ว/ล้อเมาส์เพื่อย่อขยาย'; }
+  if (!measured && shapeAcc.length >= 25) { measured = true; estimateShape(); }
+}
+async function detectPhoto() {
+  if (!st.autoTrack) return;
+  const t = await ensureTracker(); if (!t || st.mode !== 'photo') return;
+  try {
+    await setTrackerMode('IMAGE');
+    const res = t.detect(photo); const lm = res && res.faceLandmarks && res.faceLandmarks[0];
+    if (!lm) { tracked = false; status('ไม่พบใบหน้าในรูป ลากกรอบเส้นประให้ตรงหน้าเอง'); setGuide(true); return; }
+    shapeAcc.length = 0; st.offX = st.offY = 0;
+    applyLandmarks(lm, p => ({ x: p.x * W, y: p.y * H }), 1);
+    for (let i = 0; i < 8; i++) shapeAcc.push(shapeAcc[0]);
+    tracked = false; setGuide(false); estimateShape(); syncSliders(); dirty = true;
+    status('จับใบหน้าในรูปแล้ว ลากเพื่อขยับผมได้ถ้ายังไม่ตรง');
+  } catch { status('จับใบหน้าในรูปไม่สำเร็จ ลากกรอบเส้นประให้ตรงหน้าเอง'); setGuide(true); }
+  finally { await setTrackerMode('VIDEO').catch(() => {}); }
+}
+
+/* loop */
+drawThumbs(); updateBadges(); syncSliders();
+if (document.fonts) document.fonts.ready.then(() => dirty = true);
+(function loop() { frameNo++; if (st.mode === 'video') { dirty = true; if (st.autoTrack) trackVideo(); } if (dirty) { dirty = false; render(); } requestAnimationFrame(loop); })();
+})();
+</script>
+</body>
+</html>
